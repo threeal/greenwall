@@ -1,0 +1,39 @@
+name: Deploy
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+jobs:
+  deploy-pages:
+    name: Deploy Pages
+    runs-on: ubuntu-24.04
+    permissions:
+      id-token: write
+      pages: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy-pages.outputs.page_url }}
+    concurrency:
+      group: pages
+      cancel-in-progress: true
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7.0.1
+
+      - name: Setup pnpm
+        uses: threeal/setup-pnpm-action@v2.0.0
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Build
+        run: pnpm vite build
+
+      - name: Upload pages
+        uses: actions/upload-pages-artifact@v5.0.0
+        with:
+          path: dist
+
+      - name: Deploy pages
+        id: deploy-pages
+        uses: actions/deploy-pages@v5.0.0
