@@ -1,0 +1,73 @@
+.wrapper {
+  --cell-size: 11px;
+  --cell-gap: 3px;
+  --day-label-width: 28px;
+
+  display: inline-flex;
+  flex-direction: column;
+  gap: 6px;
+  color: #57606a;
+  font-size: 12px;
+}
+
+.monthLabels {
+  display: grid;
+  grid-template-columns: repeat(53, var(--cell-size));
+  column-gap: var(--cell-gap);
+  margin-left: calc(var(--day-label-width) + var(--cell-gap));
+  text-align: left;
+}
+
+.body {
+  display: flex;
+  gap: var(--cell-gap);
+}
+
+.dayLabels {
+  display: grid;
+  grid-template-rows: repeat(7, var(--cell-size));
+  row-gap: var(--cell-gap);
+  width: var(--day-label-width);
+  text-align: right;
+}
+
+.cells {
+  display: grid;
+  grid-template-rows: repeat(7, var(--cell-size));
+  grid-template-columns: repeat(53, var(--cell-size));
+  grid-auto-flow: column;
+  gap: var(--cell-gap);
+}
+
+.cell {
+  border-radius: 2px;
+  width: var(--cell-size);
+  height: var(--cell-size);
+}
+
+.level0 {
+  background-color: #ebedf0;
+}
+
+.level1 {
+  background-color: #9be9a8;
+}
+
+.level2 {
+  background-color: #40c463;
+}
+
+.level3 {
+  background-color: #30a14e;
+}
+
+.level4 {
+  background-color: #216e39;
+}
+
+.legend {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 4px;
+}
