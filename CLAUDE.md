@@ -2,20 +2,20 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-> **Template notice:** This file describes the template repository itself. If working in a project derived from this template, inform the user that this CLAUDE.md still contains template guidance and should be updated with project-specific content.
-
 ## About This Repository
 
-This is a minimalist React starter template written in TypeScript targeting the browser (ESM). The counter app in `src/` is a placeholder — replace it with your actual application when starting a new project.
+A single-page React + TypeScript app that displays a GitHub-style contributions grid for a given user.
 
 ## Architecture
 
 ### Source Files
 
-- **`src/index.tsx`** — Entry point; mounts `<App />` into the `#root` element (defined in `index.html`) inside `StrictMode`.
-- **`src/App.tsx`** — The sample component tree — a placeholder to replace with your actual application UI.
-- **`src/*.css`** — Stylesheets imported directly into their corresponding component/entry files.
-- **`src/*.test.tsx`** — Vitest test files co-located with source.
+- **`src/index.tsx`** — Entry point; mounts `<App />` into the `#root` element (defined in `index.html`).
+- **`src/App.tsx`** — Top-level component; fetches and owns contribution data for a given user.
+- **`src/components/ContributionsGrid.tsx`** — Renders the contributions grid.
+- **`src/components/StatusMessage.tsx`** — Renders an informational or error status message.
+- **`src/*.module.css`**, **`src/components/*.module.css`** — Stylesheets imported directly into their corresponding component/entry files.
+- **`src/*.test.tsx`**, **`src/components/*.test.tsx`** — Vitest test files co-located with source. `App.test.tsx` mocks the components above; its data-loading cases hit the real jogruber contributions API rather than mocking `fetch`.
 
 ### Build Output
 

@@ -1,0 +1,13 @@
+.status {
+  position: absolute;
+  top: 100%;
+  margin-top: 1rem;
+}
+
+.message {
+  color: #57606a;
+}
+
+.error {
+  color: #cf222e;
+}
