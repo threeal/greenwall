@@ -4,10 +4,16 @@ import ContributionsGrid, {
   type ContributionDay,
 } from "./components/ContributionsGrid";
 import StatusMessage from "./components/StatusMessage";
+import UsernameForm from "./components/UsernameForm";
 
 type FetchStatus = "loading" | "error" | null;
 
-export default function App({ username }: { username: string | undefined }) {
+export default function App({
+  username: initialUsername,
+}: {
+  username: string | undefined;
+}) {
+  const [username, setUsername] = useState(initialUsername);
   const [contributions, setContributions] = useState<ContributionDay[]>([]);
   const [status, setStatus] = useState<FetchStatus>(null);
 
@@ -35,19 +41,36 @@ export default function App({ username }: { username: string | undefined }) {
       });
   }, [username]);
 
-  const message = !username
-    ? 'set the "username" search parameter to see contributions'
-    : status === "loading"
-      ? `loading contributions for "${username}"`
-      : status === "error"
-        ? `could not load contributions for "${username}"`
-        : null;
+  useEffect(() => {
+    const handlePopState = () => {
+      const params = new URLSearchParams(window.location.search);
+      setUsername(params.get("username")?.trim());
+    };
+    window.addEventListener("popstate", handlePopState);
+    return () => {
+      window.removeEventListener("popstate", handlePopState);
+    };
+  }, []);
+
+  const handleSubmit = (value: string) => {
+    setUsername(value);
+    const url = new URL(window.location.href);
+    url.searchParams.set("username", value);
+    window.history.pushState(null, "", url);
+  };
 
   return (
     <div className={styles.app}>
       <ContributionsGrid contributions={contributions} />
-      {message && (
-        <StatusMessage message={message} isError={status === "error"} />
+      <UsernameForm
+        initialUsername={username}
+        loading={status === "loading"}
+        onSubmit={handleSubmit}
+      />
+      {username && status === "error" && (
+        <StatusMessage
+          message={`could not load contributions for "${username}"`}
+        />
       )}
     </div>
   );
