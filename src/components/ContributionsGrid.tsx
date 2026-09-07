@@ -1,10 +1,5 @@
+import type { ContributionDay } from "../hooks/useContributions";
 import styles from "./ContributionsGrid.module.css";
-
-export interface ContributionDay {
-  date: string;
-  count: number;
-  level: 0 | 1 | 2 | 3 | 4;
-}
 
 const MONTHS = [
   "Jan",

@@ -11,11 +11,12 @@ A single-page React + TypeScript app that displays a GitHub-style contributions 
 ### Source Files
 
 - **`src/index.tsx`** — Entry point; mounts `<App />` into the `#root` element (defined in `index.html`).
-- **`src/App.tsx`** — Top-level component; fetches and owns contribution data for a given user.
+- **`src/App.tsx`** — Top-level component; composes the contributions grid and status message from `useContributions`. Thin enough that, like `index.tsx`, it has no dedicated test — neither is imported during the test run, so neither factors into the coverage threshold.
 - **`src/components/ContributionsGrid.tsx`** — Renders the contributions grid.
 - **`src/components/StatusMessage.tsx`** — Renders an informational or error status message.
+- **`src/hooks/useContributions.ts`** — Hook that fetches and owns contribution data for a given user, and owns the `ContributionDay` type.
 - **`src/*.module.css`**, **`src/components/*.module.css`** — Stylesheets imported directly into their corresponding component/entry files.
-- **`src/*.test.tsx`**, **`src/components/*.test.tsx`** — Vitest test files co-located with source. `App.test.tsx` mocks the components above; its data-loading cases hit the real jogruber contributions API rather than mocking `fetch`.
+- **`src/components/*.test.{ts,tsx}`**, **`src/hooks/*.test.ts`** — Vitest test files co-located with source. `useContributions.test.ts` tests the hook directly with `renderHook`; its data-loading cases hit the real jogruber contributions API rather than mocking `fetch`.
 
 ### Build Output
 
@@ -60,7 +61,7 @@ Dev server and bundler configured in `vite.config.ts`. Sets `base` dynamically f
 
 ### Vitest
 
-Test runner configured in `vitest.config.ts` with 100% coverage threshold required on every test run (`src/index.tsx` is excluded, since it's just app bootstrap). Tests run in a real headless Chromium browser via `@vitest/browser-playwright` and `vitest-browser-react`, not jsdom.
+Test runner configured in `vitest.config.ts` with 100% coverage threshold required on every test run. Tests run in a real headless Chromium browser via `@vitest/browser-playwright` and `vitest-browser-react`, not jsdom.
 
 ## Checking and Fixing
 
