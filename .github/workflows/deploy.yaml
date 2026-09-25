@@ -24,7 +24,7 @@ jobs:
         run: pnpm vite build
 
       - name: Deploy pages
-        uses: cloudflare/wrangler-action@v4.0.0
+        uses: cloudflare/wrangler-action@v4.1.1
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
