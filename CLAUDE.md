@@ -11,11 +11,12 @@ A single-page React + TypeScript app that displays a GitHub-style contributions 
 ### Source Files
 
 - **`src/index.tsx`** — Entry point; mounts a `RouterProvider` for `src/router.tsx` into the `#root` element (defined in `index.html`).
-- **`src/router.tsx`** — Browser router mapping `/` to `HomePage` and any other path to `NotFoundPage`. Like `index.tsx`, it has no dedicated test — neither is imported during the test run, so neither factors into the coverage threshold; page tests build their own memory router instead.
-- **`src/pages/HomePage.tsx`** — Reads the `username` search parameter and composes the contributions grid and status message from `useContributions`.
+- **`src/router.tsx`** — Browser router mapping `/` and `/:username` to `HomePage` and any other path to `NotFoundPage`. Like `index.tsx`, it has no dedicated test — neither is imported during the test run, so neither factors into the coverage threshold; page tests build their own memory router instead.
+- **`src/pages/HomePage.tsx`** — Reads the username from the path, composes the contributions grid, username form, and error message from `useContributions`, and navigates to `/<username>` on form submit.
 - **`src/pages/NotFoundPage.tsx`** — Shown for unknown paths, with a button back to `/`.
 - **`src/components/ContributionsGrid.tsx`** — Renders the contributions grid.
-- **`src/components/StatusMessage.tsx`** — Renders an informational or error status message.
+- **`src/components/ErrorMessage.tsx`** — Renders an error message below the page content.
+- **`src/components/UsernameForm.tsx`** — GitHub-styled username input and submit button, disabled while loading.
 - **`src/components/Button.tsx`**, **`src/components/Description.tsx`** — Shared styled button and paragraph, taken from the react-starter template.
 - **`src/hooks/useContributions.ts`** — Hook that fetches and owns contribution data for a given user, and owns the `ContributionDay` type.
 - **`src/{components,pages}/*.module.css`** — Stylesheets imported directly into their corresponding component/page files.
