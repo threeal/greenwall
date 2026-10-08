@@ -6,7 +6,7 @@ export interface ContributionDay {
   level: 0 | 1 | 2 | 3 | 4;
 }
 
-type FetchStatus = "loading" | "error" | null;
+export type FetchStatus = "loading" | "error" | null;
 
 export function useContributions(username: string | undefined) {
   const [contributions, setContributions] = useState<ContributionDay[]>([]);
@@ -14,12 +14,15 @@ export function useContributions(username: string | undefined) {
 
   useEffect(() => {
     if (!username) {
+      setContributions([]);
       setStatus(null);
       return;
     }
+    const controller = new AbortController();
     setStatus("loading");
     void fetch(
       `https://github-contributions-api.jogruber.de/v4/${encodeURIComponent(username)}`,
+      { signal: controller.signal },
     )
       .then(async (response) => {
         if (!response.ok) {
@@ -32,17 +35,14 @@ export function useContributions(username: string | undefined) {
         setStatus(null);
       })
       .catch(() => {
-        setStatus("error");
+        if (!controller.signal.aborted) {
+          setStatus("error");
+        }
       });
+    return () => {
+      controller.abort();
+    };
   }, [username]);
 
-  const message = !username
-    ? 'set the "username" search parameter to see contributions'
-    : status === "loading"
-      ? `loading contributions for "${username}"`
-      : status === "error"
-        ? `could not load contributions for "${username}"`
-        : null;
-
-  return { contributions, message, isError: status === "error" };
+  return { contributions, status };
 }

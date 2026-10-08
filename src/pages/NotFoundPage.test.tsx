@@ -10,7 +10,7 @@ describe("NotFoundPage", () => {
         { path: "/", element: <p>home</p> },
         { path: "*", Component: NotFoundPage },
       ],
-      { initialEntries: ["/unknown"] },
+      { initialEntries: ["/unknown/path"] },
     );
     const screen = await render(<RouterProvider router={router} />);
 
