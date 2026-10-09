@@ -39,10 +39,7 @@ Linter configured in `eslint.config.ts`.
 
 ### GitHub Actions
 
-Automates CI/CD. Workflow files:
-
-- **`.github/workflows/ci.yaml`** — Triggers on push to `main`, pull requests, and manual dispatch. Validates the pre-commit hook, tests, and builds the app.
-- **`.github/workflows/deploy.yaml`** — Triggers on push to `main` and manual dispatch. Builds the app and publishes `dist/` to Cloudflare Pages via `wrangler pages deploy` (Direct Upload, not Cloudflare's own Git integration) — requires `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` repo secrets, and a `CLOUDFLARE_PROJECT_NAME` repo variable.
+Automates CI/CD in a single workflow, `.github/workflows/ci-cd.yaml`. Triggers on push to `main`, pull requests, and manual dispatch. Validates the pre-commit hook, tests, builds the app, and publishes `dist/` to Cloudflare Pages via `wrangler pages deploy` (Direct Upload, not Cloudflare's own Git integration) — as production on `main` and as a preview on pull requests, each reported as a GitHub Deployment. Requires `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` repo secrets, and a `CLOUDFLARE_PROJECT_NAME` repo variable.
 
 ### Lefthook
 
@@ -92,4 +89,4 @@ Tests require Playwright's Chromium shell, installed automatically by the `prepa
 
 ## Building and Deploying
 
-Use `pnpm vite build` to produce the production bundle in `dist/`; this is for local verification only. Deployment happens automatically: pushing to `main` triggers `.github/workflows/deploy.yaml`, which builds the app and publishes `dist/` to Cloudflare Pages via Wrangler.
+Use `pnpm vite build` to produce the production bundle in `dist/`; this is for local verification only. Deployment happens automatically via `.github/workflows/ci-cd.yaml`: pushing to `main` publishes `dist/` to Cloudflare Pages as production, and each pull request gets its own preview deployment.
