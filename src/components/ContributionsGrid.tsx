@@ -1,4 +1,4 @@
-import type { ContributionDay } from "../hooks/useContributions";
+import type { ContributionDay } from "../types";
 import styles from "./ContributionsGrid.module.css";
 
 const MONTHS = [

@@ -1,6 +1,6 @@
 import { expect, test } from "vitest";
 import { render } from "vitest-browser-react";
-import type { ContributionDay } from "../hooks/useContributions";
+import type { ContributionDay } from "../types";
 import ContributionsGrid, { buildGrid } from "./ContributionsGrid";
 import styles from "./ContributionsGrid.module.css";
 
