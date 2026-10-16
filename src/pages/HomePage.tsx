@@ -7,12 +7,14 @@ import type { ContributionDay } from "../types";
 import styles from "./HomePage.module.css";
 
 type ContributionResult =
-  | { contributions: ContributionDay[]; error: false }
-  | { contributions: ContributionDay[]; error: true };
+  { contributions: ContributionDay[] } | { error: true };
 
 async function fetchContributions(
-  username: string,
+  username: string | undefined,
 ): Promise<ContributionResult> {
+  if (!username) {
+    return { contributions: [] };
+  }
   try {
     const response = await fetch(
       `https://github-contributions-api.jogruber.de/v4/${encodeURIComponent(username)}`,
@@ -23,9 +25,9 @@ async function fetchContributions(
     const data = (await response.json()) as {
       contributions: ContributionDay[];
     };
-    return { contributions: data.contributions, error: false };
+    return { contributions: data.contributions };
   } catch {
-    return { contributions: [], error: true };
+    return { error: true };
   }
 }
 
@@ -46,7 +48,6 @@ function HomePageContent({
     <div className={styles.page}>
       <ContributionsGrid contributions={contributions} />
       <UsernameForm
-        key={username}
         defaultUsername={username}
         loading={loading}
         onSubmit={(value) => {
@@ -66,7 +67,7 @@ function ResolvedHomePage({
   username,
   promise,
 }: {
-  username: string;
+  username: string | undefined;
   promise: Promise<ContributionResult>;
 }) {
   const result = use(promise);
@@ -74,14 +75,14 @@ function ResolvedHomePage({
   return (
     <HomePageContent
       username={username}
-      contributions={result.contributions}
+      contributions={"error" in result ? [] : result.contributions}
       loading={false}
-      error={result.error}
+      error={"error" in result}
     />
   );
 }
 
-function LoadedHomePage({ username }: { username: string }) {
+function LoadedHomePage({ username }: { username: string | undefined }) {
   const [promise] = useState(() => fetchContributions(username));
 
   return (
@@ -102,17 +103,6 @@ function LoadedHomePage({ username }: { username: string }) {
 
 export default function HomePage() {
   const { username } = useParams();
-
-  if (!username) {
-    return (
-      <HomePageContent
-        username={undefined}
-        contributions={[]}
-        loading={false}
-        error={false}
-      />
-    );
-  }
 
   return <LoadedHomePage key={username} username={username} />;
 }
