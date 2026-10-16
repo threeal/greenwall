@@ -43,10 +43,11 @@ function HomePageContent({
   error: boolean;
 }) {
   const navigate = useNavigate();
+  const [today] = useState(() => new Date());
 
   return (
     <div className={styles.page}>
-      <ContributionsGrid contributions={contributions} />
+      <ContributionsGrid contributions={contributions} today={today} />
       <UsernameForm
         defaultUsername={username}
         loading={loading}

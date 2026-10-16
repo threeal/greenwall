@@ -77,10 +77,10 @@ function levelClass(level: 0 | 1 | 2 | 3 | 4) {
 
 export default function ContributionsGrid({
   contributions,
-  today = new Date(),
+  today,
 }: {
   contributions: ContributionDay[];
-  today?: Date;
+  today: Date;
 }) {
   const { weeks, monthLabels } = buildGrid(contributions, today);
 
