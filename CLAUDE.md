@@ -12,15 +12,15 @@ A single-page React + TypeScript app that displays a GitHub-style contributions 
 
 - **`src/index.tsx`** — Entry point; mounts a `RouterProvider` for `src/router.tsx` into the `#root` element (defined in `index.html`).
 - **`src/router.tsx`** — Browser router mapping `/` and `/:username` to `HomePage` and any other path to `NotFoundPage`. Like `index.tsx`, it has no dedicated test — neither is imported during the test run, so neither factors into the coverage threshold; page tests build their own memory router instead.
-- **`src/pages/HomePage.tsx`** — Reads the username from the path, composes the contributions grid, username form, and error message from `useContributions`, and navigates to `/<username>` on form submit.
+- **`src/pages/HomePage.tsx`** — Reads the username from the path, composes the contributions grid, username form, and error message, and navigates to `/<username>` on form submit. For each username, including none, it keeps a `fetchContributions` promise in state and reads it with `use()` inside a `<Suspense>` boundary, whose fallback is the loading state. `fetchContributions` resolves to the user's contributions (none without a username) or to an error result instead of rejecting.
 - **`src/pages/NotFoundPage.tsx`** — Shown for unknown paths, with a button back to `/`.
 - **`src/components/ContributionsGrid.tsx`** — Renders the contributions grid.
 - **`src/components/ErrorMessage.tsx`** — Renders an error message below the page content.
 - **`src/components/UsernameForm.tsx`** — GitHub-styled username input and submit button, disabled while loading.
 - **`src/components/Button.tsx`**, **`src/components/Description.tsx`** — Shared styled button and paragraph, taken from the react-starter template.
-- **`src/hooks/useContributions.ts`** — Hook that fetches and owns contribution data for a given user, and owns the `ContributionDay` type.
+- **`src/types.ts`** — Shared types, such as `ContributionDay`.
 - **`src/{components,pages}/*.module.css`** — Stylesheets imported directly into their corresponding component/page files.
-- **`src/{components,pages}/*.test.tsx`**, **`src/hooks/*.test.ts`** — Vitest test files co-located with source. `useContributions.test.ts` tests the hook directly with `renderHook`; its data-loading cases, and `HomePage.test.tsx`'s, hit the real jogruber contributions API rather than mocking `fetch`.
+- **`src/{components,pages}/*.test.tsx`** — Vitest test files co-located with source. `HomePage.test.tsx` also covers `fetchContributions`; its data-loading cases hit the real jogruber contributions API rather than mocking `fetch`.
 
 ### Build Output
 
