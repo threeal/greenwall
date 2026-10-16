@@ -12,3 +12,15 @@ updates:
     cooldown:
       default-days: 1
     versioning-strategy: increase
+    groups:
+      react:
+        patterns:
+          - react
+          - react-dom
+          - "@types/react"
+          - "@types/react-dom"
+      vitest:
+        patterns:
+          - vitest
+          - "@vitest/coverage-v8"
+          - "@vitest/browser-playwright"
