@@ -34,6 +34,12 @@ interface MonthLabel {
   text: string;
 }
 
+/**
+ * Lays out a year of contributions as week columns ending on the week of `today`.
+ * @param contributions - The contribution days to place on the grid.
+ * @param today - The last day shown; later days in its week are left empty.
+ * @returns The grid's week columns and the month labels above them.
+ */
 export function buildGrid(contributions: ContributionDay[], today: Date) {
   const byDate = new Map(contributions.map((day) => [day.date, day]));
   const start = new Date(today);
@@ -64,6 +70,11 @@ export function buildGrid(contributions: ContributionDay[], today: Date) {
   return { weeks, monthLabels };
 }
 
+/**
+ * Gets the class names for a grid cell colored by its contribution level.
+ * @param level - The contribution level, from 0 (none) to 4 (most).
+ * @returns The cell's class names.
+ */
 function levelClass(level: 0 | 1 | 2 | 3 | 4) {
   const classes: Record<0 | 1 | 2 | 3 | 4, string> = {
     0: styles.level0,
@@ -75,6 +86,13 @@ function levelClass(level: 0 | 1 | 2 | 3 | 4) {
   return `${styles.cell} ${classes[level]}`;
 }
 
+/**
+ * Renders a GitHub-style contributions grid with month and day labels and a legend.
+ * @param props - The component props.
+ * @param props.contributions - The contribution days to display.
+ * @param props.today - The last day shown on the grid.
+ * @returns The contributions grid element.
+ */
 export default function ContributionsGrid({
   contributions,
   today,

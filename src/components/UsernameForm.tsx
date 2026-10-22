@@ -1,5 +1,13 @@
 import styles from "./UsernameForm.module.css";
 
+/**
+ * Renders a GitHub username input with a submit button.
+ * @param props - The component props.
+ * @param props.defaultUsername - The username initially shown in the input.
+ * @param props.loading - Whether contributions are loading, which disables the form.
+ * @param props.onSubmit - Called with the trimmed username when a non-empty one is submitted.
+ * @returns A form element.
+ */
 export default function UsernameForm({
   defaultUsername,
   loading,
