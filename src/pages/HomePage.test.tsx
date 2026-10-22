@@ -3,6 +3,11 @@ import { describe, expect, test } from "vitest";
 import { render } from "vitest-browser-react";
 import HomePage from "./HomePage";
 
+/**
+ * Renders the home page in a memory router starting at the given path.
+ * @param path - The initial path, such as `/` or `/<username>`.
+ * @returns The memory router and the rendered screen.
+ */
 async function renderAt(path: string) {
   const router = createMemoryRouter(
     [{ path: "/:username?", Component: HomePage }],
