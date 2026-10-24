@@ -4,89 +4,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## About This Repository
 
-A single-page React + TypeScript app that displays a GitHub-style contributions grid for a given user.
+A single-page React app that displays a GitHub-style contributions grid for a given user, bundled with Vite and deployed to Cloudflare Pages.
 
-## Architecture
+## Gotchas
 
-### Source Files
-
-- **`src/index.tsx`** — Entry point; mounts a `RouterProvider` for `src/router.tsx` into the `#root` element (defined in `index.html`).
-- **`src/router.tsx`** — Browser router mapping `/` and `/:username` to `HomePage` and any other path to `NotFoundPage`. Like `index.tsx`, it has no dedicated test — neither is imported during the test run, so neither factors into the coverage threshold; page tests build their own memory router instead.
-- **`src/pages/HomePage.tsx`** — Reads the username from the path, composes the contributions grid, username form, and error message, and navigates to `/<username>` on form submit. For each username, including none, it keeps a `fetchContributions` promise in state and reads it with `use()` inside a `<Suspense>` boundary, whose fallback is the loading state. `fetchContributions` resolves to the user's contributions (none without a username) or to an error result instead of rejecting.
-- **`src/pages/NotFoundPage.tsx`** — Shown for unknown paths, with a button back to `/`.
-- **`src/components/ContributionsGrid.tsx`** — Renders the contributions grid.
-- **`src/components/ErrorMessage.tsx`** — Renders an error message below the page content.
-- **`src/components/UsernameForm.tsx`** — GitHub-styled username input and submit button, disabled while loading.
-- **`src/components/Button.tsx`**, **`src/components/Description.tsx`** — Shared styled button and paragraph, taken from the react-starter template.
-- **`src/types.ts`** — Shared types, such as `ContributionDay`.
-- **`src/{components,pages}/*.module.css`** — Stylesheets imported directly into their corresponding component/page files.
-- **`src/{components,pages}/*.test.tsx`** — Vitest test files co-located with source. `HomePage.test.tsx` also covers `fetchContributions`; its data-loading cases hit the real jogruber contributions API rather than mocking `fetch`.
-
-### Build Output
-
-- **`dist/`** — Static site produced by `pnpm vite build`; deployed to Cloudflare Pages by CI.
-- **`public/_redirects`** — Serves `index.html` for any unmatched path (Cloudflare Pages' native SPA fallback), letting the client-side router handle unknown paths.
-
-## Tooling
-
-### Dependabot
-
-Keeps GitHub Actions and npm dependencies up to date automatically via `.github/dependabot.yaml`.
-
-### ESLint
-
-Linter configured in `eslint.config.ts`.
-
-### GitHub Actions
-
-Automates CI/CD in a single workflow, `.github/workflows/ci-cd.yaml`. Triggers on push to `main`, pull requests, and manual dispatch. Validates the pre-commit hook, tests, builds the app, and publishes `dist/` to Cloudflare Pages via `wrangler pages deploy` (Direct Upload, not Cloudflare's own Git integration) — as production on `main` and as a preview on pull requests, each reported as a GitHub Deployment. Requires `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` repo secrets, and a `CLOUDFLARE_PROJECT_NAME` repo variable.
-
-### Lefthook
-
-Git hook manager configured in `lefthook.yaml`.
-
-### pnpm
-
-Package manager. Also manages the Node.js runtime — versions for Node.js and pnpm are pinned in `package.json`.
-
-### Prettier
-
-Formatter configured in `.prettierrc.json` using `prettier-plugin-organize-imports` and `prettier-plugin-css-order` — import order and CSS property order are auto-managed.
-
-### TypeScript
-
-Type checker. `tsconfig.json` (extends `@tsconfig/vite-react`) is used for type checking via `pnpm tsc`. There's no separate build config — Vite transpiles and bundles TypeScript itself without type-checking, so `pnpm tsc` is the only type-safety gate.
-
-### Vite
-
-Dev server and bundler configured in `vite.config.ts`.
-
-### Vitest
-
-Test runner configured in `vitest.config.ts` with 100% coverage threshold required on every test run. Tests run in a real headless Chromium browser via `@vitest/browser-playwright` and `vitest-browser-react`, not jsdom.
-
-## Checking and Fixing
-
-Run the pre-commit hook to check types, formatting, and lint locally:
-
-```sh
-lefthook run pre-commit              # staged files only (default)
-lefthook run pre-commit --all-files  # all files — matches what CI runs
-```
-
-If any file changes during the run, re-stage the changed files and retry.
-
-## Testing
-
-```sh
-pnpm vitest run             # Run all tests
-pnpm vitest run <file>      # Run a single test file
-```
-
-Coverage is always enabled and computed for all files imported during the test run. Running a single test file may fail the 100% threshold if it imports a source file that another test is responsible for fully covering — use the full suite for accurate results.
-
-Tests require Playwright's Chromium shell, installed automatically by the `prepare` script (`playwright install chromium --only-shell`) after `pnpm install`.
-
-## Building and Deploying
-
-Use `pnpm vite build` to produce the production bundle in `dist/`; this is for local verification only. Deployment happens automatically via `.github/workflows/ci-cd.yaml`: pushing to `main` publishes `dist/` to Cloudflare Pages as production, and each pull request gets its own preview deployment.
+- `lefthook run pre-commit` skips every job when nothing is staged, even ones that ignore the staged file list — pass `--all-files` to run it outside an actual commit.
+- The pre-commit hook fixes files in place, and the run fails if any file changes. Report that failure and leave the fixes for the user to review and re-stage before committing again.
+- Vitest's 100% coverage threshold applies to the whole run, not per file — a single test file can fail on source that other tests cover, so run the full suite (`pnpm vitest run`).
+- `HomePage.test.tsx` hits the real jogruber contributions API instead of mocking `fetch` — its data-loading tests need network access and can fail from an API outage or rate limit with no code change.
+- `.gitignore` ignores every dotfile and dotdir (`.*`) — a new one needs an explicit `!` exception there or it silently won't be tracked.
