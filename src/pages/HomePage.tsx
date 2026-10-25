@@ -1,9 +1,9 @@
 import { Suspense, use, useState } from "react";
 import { useNavigate, useParams } from "react-router";
-import ContributionsGrid from "../components/ContributionsGrid";
-import ErrorMessage from "../components/ErrorMessage";
-import UsernameForm from "../components/UsernameForm";
-import type { ContributionDay } from "../types";
+import ContributionsGrid from "../components/ContributionsGrid.tsx";
+import ErrorMessage from "../components/ErrorMessage.tsx";
+import UsernameForm from "../components/UsernameForm.tsx";
+import type { ContributionDay } from "../types.ts";
 import styles from "./HomePage.module.css";
 
 type ContributionResult =

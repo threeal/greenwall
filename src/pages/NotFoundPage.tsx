@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router";
-import Button from "../components/Button";
-import Description from "../components/Description";
+import Button from "../components/Button.tsx";
+import Description from "../components/Description.tsx";
 
 /**
  * Renders the page shown for unknown paths, with a button that navigates back home.

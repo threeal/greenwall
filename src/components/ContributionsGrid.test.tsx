@@ -1,8 +1,8 @@
 import { expect, test } from "vitest";
 import { render } from "vitest-browser-react";
-import type { ContributionDay } from "../types";
-import ContributionsGrid, { buildGrid } from "./ContributionsGrid";
+import type { ContributionDay } from "../types.ts";
 import styles from "./ContributionsGrid.module.css";
+import ContributionsGrid, { buildGrid } from "./ContributionsGrid.tsx";
 
 const TODAY = new Date(2026, 7, 24); // Monday, Aug 24 2026
 

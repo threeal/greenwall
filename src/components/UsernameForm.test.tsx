@@ -1,6 +1,6 @@
 import { expect, test, vi } from "vitest";
 import { render } from "vitest-browser-react";
-import UsernameForm from "./UsernameForm";
+import UsernameForm from "./UsernameForm.tsx";
 
 test("fills the input with the default username", async () => {
   const screen = await render(
