@@ -7,9 +7,9 @@ import tseslint from "typescript-eslint";
 export default defineConfig(
   globalIgnores(["dist"]),
   js.configs.recommended,
-  jsdoc({ config: "flat/recommended-tsdoc-error" }),
   tseslint.configs.strictTypeChecked,
   tseslint.configs.stylisticTypeChecked,
+  jsdoc({ config: "flat/recommended-tsdoc-error" }),
   eslintReact.configs["strict-type-checked"],
   {
     languageOptions: {
