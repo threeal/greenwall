@@ -1,7 +1,7 @@
 import { createMemoryRouter, RouterProvider } from "react-router";
 import { describe, expect, test } from "vitest";
 import { render } from "vitest-browser-react";
-import HomePage from "./HomePage";
+import HomePage from "./HomePage.tsx";
 
 /**
  * Renders the home page in a memory router starting at the given path.

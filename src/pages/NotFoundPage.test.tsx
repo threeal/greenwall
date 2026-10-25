@@ -1,7 +1,7 @@
 import { createMemoryRouter, RouterProvider } from "react-router";
 import { describe, expect, test } from "vitest";
 import { render } from "vitest-browser-react";
-import NotFoundPage from "./NotFoundPage";
+import NotFoundPage from "./NotFoundPage.tsx";
 
 describe("NotFoundPage", () => {
   test("navigates back home when the button is clicked", async () => {
