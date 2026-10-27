@@ -27,11 +27,45 @@ const LEVELS = [0, 1, 2, 3, 4] as const;
 interface Cell {
   date: string;
   level: 0 | 1 | 2 | 3 | 4;
+  tooltip?: string;
 }
 
 interface MonthLabel {
   column: number;
   text: string;
+}
+
+/**
+ * Gets the English ordinal suffix for a day of the month.
+ * @param day - The day of the month, from 1 to 31.
+ * @returns The suffix, such as "st" for 1 or "th" for 11.
+ */
+function ordinalSuffix(day: number) {
+  if (day >= 11 && day <= 13) return "th";
+  switch (day % 10) {
+    case 1:
+      return "st";
+    case 2:
+      return "nd";
+    case 3:
+      return "rd";
+    default:
+      return "th";
+  }
+}
+
+/**
+ * Describes a day's contributions the way GitHub's grid tooltip does.
+ * @param date - The day being described.
+ * @param count - The number of contributions on that day.
+ * @returns A sentence like "5 contributions on October 26th.".
+ */
+function describeDay(date: Date, count: number) {
+  const month = date.toLocaleDateString("en-US", { month: "long" });
+  const day = `${month} ${String(date.getDate())}${ordinalSuffix(date.getDate())}`;
+  if (count === 0) return `No contributions on ${day}.`;
+  if (count === 1) return `1 contribution on ${day}.`;
+  return `${String(count)} contributions on ${day}.`;
 }
 
 /**
@@ -55,10 +89,16 @@ export function buildGrid(contributions: ContributionDay[], today: Date) {
       const date = new Date(start);
       date.setDate(start.getDate() + column * 7 + row);
       const key = `${String(date.getFullYear())}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
-      week.push({
-        date: key,
-        level: date > today ? 0 : (byDate.get(key)?.level ?? 0),
-      });
+      const day = byDate.get(key);
+      week.push(
+        date > today
+          ? { date: key, level: 0 }
+          : {
+              date: key,
+              level: day?.level ?? 0,
+              tooltip: describeDay(date, day?.count ?? 0),
+            },
+      );
       if (date.getDate() === 1 && date.getMonth() !== lastMonth) {
         monthLabels.push({ column, text: MONTHS[date.getMonth()] });
         lastMonth = date.getMonth();
@@ -121,7 +161,11 @@ export default function ContributionsGrid({
         </div>
         <div className={styles.cells}>
           {weeks.flat().map((cell) => (
-            <div key={cell.date} className={levelClass(cell.level)} />
+            <div
+              key={cell.date}
+              className={levelClass(cell.level)}
+              data-tooltip={cell.tooltip}
+            />
           ))}
         </div>
       </div>

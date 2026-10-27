@@ -35,6 +35,23 @@ test("buildGrid maps contribution levels onto matching dates and ignores dates a
   expect(byDate.get("2026-08-26")).toBe(0);
 });
 
+test("buildGrid describes each day up to today in a tooltip", () => {
+  const contributions: ContributionDay[] = [
+    { date: "2026-08-01", count: 1, level: 1 },
+    { date: "2026-08-22", count: 7, level: 3 },
+  ];
+
+  const { weeks } = buildGrid(contributions, TODAY);
+  const byDate = new Map(weeks.flat().map((cell) => [cell.date, cell.tooltip]));
+
+  expect(byDate.get("2026-08-01")).toBe("1 contribution on August 1st.");
+  expect(byDate.get("2026-08-02")).toBe("No contributions on August 2nd.");
+  expect(byDate.get("2026-08-03")).toBe("No contributions on August 3rd.");
+  expect(byDate.get("2026-08-12")).toBe("No contributions on August 12th.");
+  expect(byDate.get("2026-08-22")).toBe("7 contributions on August 22nd.");
+  expect(byDate.get("2026-08-25")).toBeUndefined();
+});
+
 test("renders an empty grid with month and day labels when there is no data", async () => {
   const screen = await render(
     <ContributionsGrid contributions={[]} today={TODAY} />,
@@ -60,4 +77,17 @@ test("colors a cell according to the contribution level for its date", async () 
   );
   await expect.element(screen.getByText("Aug")).toBeVisible();
   expect(document.querySelectorAll(`.${styles.level3}`)).toHaveLength(2);
+});
+
+test("attaches a tooltip describing the day to a cell", async () => {
+  const contributions: ContributionDay[] = [
+    { date: "2026-08-24", count: 10, level: 3 },
+  ];
+  const screen = await render(
+    <ContributionsGrid contributions={contributions} today={TODAY} />,
+  );
+  await expect.element(screen.getByText("Aug")).toBeVisible();
+  expect(
+    document.querySelector('[data-tooltip="10 contributions on August 24th."]'),
+  ).not.toBeNull();
 });
