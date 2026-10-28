@@ -22,6 +22,10 @@ describe("HomePage", () => {
     const { screen } = await renderAt("/");
     await expect.element(screen.getByRole("textbox")).toHaveValue("");
     await expect.element(screen.getByRole("textbox")).toBeEnabled();
+    await expect
+      .element(screen.getByRole("button", { name: "View contributions" }))
+      .toBeEnabled();
+    await expect.element(screen.getByRole("status")).not.toBeInTheDocument();
   });
 
   test("navigates to the submitted username's path", async () => {
@@ -39,14 +43,66 @@ describe("HomePage", () => {
     async () => {
       const { screen } = await renderAt("/threeal");
       await expect.element(screen.getByRole("textbox")).toHaveValue("threeal");
-      await expect.element(screen.getByRole("textbox")).toBeDisabled();
+      await expect.element(screen.getByRole("textbox")).toBeEnabled();
+      await expect
+        .element(screen.getByRole("status"))
+        .toHaveTextContent("loading contributions for threeal…");
+      await expect
+        .element(screen.getByRole("button", { name: "View contributions" }))
+        .toBeDisabled();
 
       await expect
-        .element(screen.getByRole("textbox"), { timeout: 15_000 })
+        .element(screen.getByRole("button", { name: "Refresh" }), {
+          timeout: 15_000,
+        })
         .toBeEnabled();
+      await expect.element(screen.getByRole("status")).toBeEmptyDOMElement();
+    },
+  );
+
+  test(
+    "refreshes contributions without changing the path",
+    { timeout: 35_000 },
+    async () => {
+      const { router, screen } = await renderAt("/threeal");
       await expect
-        .element(screen.getByText(/could not load contributions/))
-        .not.toBeInTheDocument();
+        .element(screen.getByRole("button", { name: "Refresh" }), {
+          timeout: 15_000,
+        })
+        .toBeEnabled();
+      const { key } = router.state.location;
+
+      await screen.getByRole("button", { name: "Refresh" }).click();
+      expect(router.state.location.key).toBe(key);
+      await expect
+        .element(screen.getByRole("status"))
+        .toHaveTextContent("loading contributions for threeal…");
+      await expect
+        .element(screen.getByRole("button", { name: "Refresh" }))
+        .toBeDisabled();
+
+      await expect
+        .element(screen.getByRole("button", { name: "Refresh" }), {
+          timeout: 15_000,
+        })
+        .toBeEnabled();
+    },
+  );
+
+  test(
+    "switches to another username without waiting for the current one to load",
+    { timeout: 20_000 },
+    async () => {
+      const { router, screen } = await renderAt("/octocat");
+      await screen.getByRole("textbox").fill("threeal");
+      await screen.getByRole("button", { name: "View contributions" }).click();
+      expect(router.state.location.pathname).toBe("/threeal");
+
+      await expect
+        .element(screen.getByRole("button", { name: "Refresh" }), {
+          timeout: 15_000,
+        })
+        .toBeEnabled();
     },
   );
 
@@ -56,14 +112,13 @@ describe("HomePage", () => {
     async () => {
       const { screen } = await renderAt("/this-user-should-not-exist-zzz9999");
       await expect
-        .element(
-          screen.getByText(
-            'could not load contributions for "this-user-should-not-exist-zzz9999"',
-          ),
-          { timeout: 15_000 },
-        )
-        .toBeVisible();
-      await expect.element(screen.getByRole("textbox")).toBeEnabled();
+        .element(screen.getByRole("status"), { timeout: 15_000 })
+        .toHaveTextContent(
+          "could not load contributions for this-user-should-not-exist-zzz9999",
+        );
+      await expect
+        .element(screen.getByRole("button", { name: "View contributions" }))
+        .toBeEnabled();
     },
   );
 });

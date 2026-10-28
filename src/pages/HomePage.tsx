@@ -1,7 +1,7 @@
 import { Suspense, use, useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import ContributionsGrid from "../components/ContributionsGrid.tsx";
-import ErrorMessage from "../components/ErrorMessage.tsx";
+import FetchStatus from "../components/FetchStatus.tsx";
 import UsernameForm from "../components/UsernameForm.tsx";
 import type { ContributionDay } from "../types.ts";
 import styles from "./HomePage.module.css";
@@ -36,42 +36,64 @@ async function fetchContributions(
   }
 }
 
+interface HomePageContentProps {
+  username: string | undefined;
+  hasLoaded: boolean;
+  input: string;
+  onInputChange: (input: string) => void;
+  onRefresh: (hasLoaded: boolean) => void;
+}
+
 /**
- * Renders the home page's contributions grid, username form, and error message.
+ * Renders the home page's contributions grid, username form, and fetch status.
  * @param props - The component props.
  * @param props.username - The username from the path, if any.
- * @param props.contributions - The contribution days to display.
- * @param props.loading - Whether contributions are still loading.
- * @param props.error - Whether loading the contributions failed.
+ * @param props.hasLoaded - Whether an earlier fetch for the username succeeded.
+ * @param props.input - The text in the username input.
+ * @param props.onInputChange - Called with the new text when the username input changes.
+ * @param props.onRefresh - Called to refetch the contributions, with whether they loaded before.
+ * @param props.result - The fetched contributions, or undefined while they are still loading.
  * @returns The home page content.
  */
 function HomePageContent({
   username,
-  contributions,
-  loading,
-  error,
-}: {
-  username: string | undefined;
-  contributions: ContributionDay[];
-  loading: boolean;
-  error: boolean;
-}) {
+  hasLoaded,
+  input,
+  onInputChange,
+  onRefresh,
+  result,
+}: HomePageContentProps & { result: ContributionResult | undefined }) {
   const navigate = useNavigate();
   const [today] = useState(() => new Date());
+  const loaded =
+    hasLoaded || (result !== undefined && "contributions" in result);
 
   return (
     <div className={styles.page}>
-      <ContributionsGrid contributions={contributions} today={today} />
+      <ContributionsGrid
+        contributions={
+          result && "contributions" in result ? result.contributions : []
+        }
+        today={today}
+      />
       <UsernameForm
-        defaultUsername={username}
-        loading={loading}
+        value={input}
+        onValueChange={onInputChange}
+        loadedUsername={loaded ? username : undefined}
+        loadingUsername={result ? undefined : username}
         onSubmit={(value) => {
-          void navigate(`/${encodeURIComponent(value)}`);
+          if (value === username) {
+            onRefresh(loaded);
+          } else {
+            void navigate(`/${encodeURIComponent(value)}`);
+          }
         }}
       />
-      {username && error && (
-        <ErrorMessage
-          message={`could not load contributions for "${username}"`}
+      {username && (
+        <FetchStatus
+          username={username}
+          loading={!result}
+          error={result !== undefined && "error" in result}
         />
       )}
     </div>
@@ -80,51 +102,44 @@ function HomePageContent({
 
 /**
  * Renders the home page content once the contributions promise resolves.
- * @param props - The component props.
- * @param props.username - The username from the path, if any.
+ * @param props - The component props, passed on to the home page content.
  * @param props.promise - The pending result of fetching the user's contributions.
  * @returns The home page content for the resolved result.
  */
 function ResolvedHomePage({
-  username,
   promise,
-}: {
-  username: string | undefined;
-  promise: Promise<ContributionResult>;
-}) {
+  ...props
+}: HomePageContentProps & { promise: Promise<ContributionResult> }) {
   const result = use(promise);
 
-  return (
-    <HomePageContent
-      username={username}
-      contributions={"error" in result ? [] : result.contributions}
-      loading={false}
-      error={"error" in result}
-    />
-  );
+  return <HomePageContent {...props} result={result} />;
 }
 
 /**
- * Starts fetching a user's contributions and shows the loading state until they resolve.
+ * Starts fetching a user's contributions and shows the loading state until they resolve, refetching on refresh.
  * @param props - The component props.
  * @param props.username - The username from the path, if any.
  * @returns The home page content, wrapped in a Suspense boundary.
  */
 function LoadedHomePage({ username }: { username: string | undefined }) {
-  const [promise] = useState(() => fetchContributions(username));
+  const [promise, setPromise] = useState(() => fetchContributions(username));
+  const [hasLoaded, setHasLoaded] = useState(false);
+  const [input, setInput] = useState(username ?? "");
+
+  const props: HomePageContentProps = {
+    username,
+    hasLoaded,
+    input,
+    onInputChange: setInput,
+    onRefresh: (loaded) => {
+      setHasLoaded(loaded);
+      setPromise(fetchContributions(username));
+    },
+  };
 
   return (
-    <Suspense
-      fallback={
-        <HomePageContent
-          username={username}
-          contributions={[]}
-          loading
-          error={false}
-        />
-      }
-    >
-      <ResolvedHomePage username={username} promise={promise} />
+    <Suspense fallback={<HomePageContent {...props} result={undefined} />}>
+      <ResolvedHomePage {...props} promise={promise} />
     </Suspense>
   );
 }
