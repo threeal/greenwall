@@ -1,6 +1,9 @@
-.error {
+.status {
   position: absolute;
   top: 100%;
   margin-top: 0.5rem;
+}
+
+.error {
   color: #cf222e;
 }

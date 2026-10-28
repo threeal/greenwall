@@ -20,12 +20,6 @@
   border-color: #0969da;
 }
 
-.input:disabled {
-  cursor: not-allowed;
-  background-color: #f6f8fa;
-  color: #57606a;
-}
-
 .button {
   cursor: pointer;
   border: 1px solid rgba(31, 35, 40, 0.15);
