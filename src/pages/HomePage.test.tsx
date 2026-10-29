@@ -17,6 +17,16 @@ async function renderAt(path: string) {
   return { router, screen };
 }
 
+/**
+ * Lists the tooltips of the grid cells currently visible on the page.
+ * @returns The visible cells' tooltips, in grid order.
+ */
+function visibleTooltips() {
+  return [...document.querySelectorAll<HTMLElement>("[data-tooltip]")]
+    .filter((cell) => cell.checkVisibility())
+    .map((cell) => cell.dataset.tooltip);
+}
+
 describe("HomePage", () => {
   test("shows an empty, enabled form when there is no username", async () => {
     const { screen } = await renderAt("/");
@@ -61,7 +71,7 @@ describe("HomePage", () => {
   );
 
   test(
-    "refreshes contributions without changing the path",
+    "refreshes contributions without changing the path or clearing the grid",
     { timeout: 35_000 },
     async () => {
       const { router, screen } = await renderAt("/threeal");
@@ -71,12 +81,17 @@ describe("HomePage", () => {
         })
         .toBeEnabled();
       const { key } = router.state.location;
+      const tooltips = visibleTooltips();
+      expect(
+        tooltips.some((tooltip) => !tooltip?.startsWith("No contributions")),
+      ).toBe(true);
 
       await screen.getByRole("button", { name: "Refresh" }).click();
       expect(router.state.location.key).toBe(key);
       await expect
         .element(screen.getByRole("status"))
         .toHaveTextContent("loading contributions for threeal…");
+      expect(visibleTooltips()).toEqual(tooltips);
       await expect
         .element(screen.getByRole("button", { name: "Refresh" }))
         .toBeDisabled();
@@ -119,6 +134,35 @@ describe("HomePage", () => {
       await expect
         .element(screen.getByRole("button", { name: "View contributions" }))
         .toBeEnabled();
+    },
+  );
+
+  test(
+    "retries a username that failed to load",
+    { timeout: 35_000 },
+    async () => {
+      const { screen } = await renderAt("/this-user-should-not-exist-zzz9999");
+      await expect
+        .element(screen.getByRole("status"), { timeout: 15_000 })
+        .toHaveTextContent(
+          "could not load contributions for this-user-should-not-exist-zzz9999",
+        );
+
+      await screen.getByRole("button", { name: "View contributions" }).click();
+      await expect
+        .element(screen.getByRole("status"))
+        .toHaveTextContent(
+          "loading contributions for this-user-should-not-exist-zzz9999…",
+        );
+      await expect
+        .element(screen.getByRole("button", { name: "View contributions" }))
+        .toBeDisabled();
+
+      await expect
+        .element(screen.getByRole("status"), { timeout: 15_000 })
+        .toHaveTextContent(
+          "could not load contributions for this-user-should-not-exist-zzz9999",
+        );
     },
   );
 });
