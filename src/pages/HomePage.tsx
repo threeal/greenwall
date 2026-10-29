@@ -38,63 +38,60 @@ async function fetchContributions(
 
 interface HomePageContentProps {
   username: string | undefined;
-  hasLoaded: boolean;
   input: string;
   onInputChange: (input: string) => void;
-  onRefresh: (hasLoaded: boolean) => void;
+  onRefresh: (loadedContributions: ContributionDay[] | undefined) => void;
 }
 
 /**
  * Renders the home page's contributions grid, username form, and fetch status.
  * @param props - The component props.
  * @param props.username - The username from the path, if any.
- * @param props.hasLoaded - Whether an earlier fetch for the username succeeded.
  * @param props.input - The text in the username input.
  * @param props.onInputChange - Called with the new text when the username input changes.
- * @param props.onRefresh - Called to refetch the contributions, with whether they loaded before.
- * @param props.result - The fetched contributions, or undefined while they are still loading.
+ * @param props.onRefresh - Called to refetch the contributions, with the ones currently shown.
+ * @param props.contributions - The contributions to show in the grid.
+ * @param props.loaded - Whether the contributions were loaded for the username, which turns the submit button into a refresh.
+ * @param props.loading - Whether the contributions are still loading.
+ * @param props.error - Whether the latest fetch failed.
  * @returns The home page content.
  */
 function HomePageContent({
   username,
-  hasLoaded,
   input,
   onInputChange,
   onRefresh,
-  result,
-}: HomePageContentProps & { result: ContributionResult | undefined }) {
+  contributions,
+  loaded,
+  loading,
+  error,
+}: HomePageContentProps & {
+  contributions: ContributionDay[];
+  loaded: boolean;
+  loading: boolean;
+  error: boolean;
+}) {
   const navigate = useNavigate();
   const [today] = useState(() => new Date());
-  const loaded =
-    hasLoaded || (result !== undefined && "contributions" in result);
 
   return (
     <div className={styles.page}>
-      <ContributionsGrid
-        contributions={
-          result && "contributions" in result ? result.contributions : []
-        }
-        today={today}
-      />
+      <ContributionsGrid contributions={contributions} today={today} />
       <UsernameForm
         value={input}
         onValueChange={onInputChange}
         loadedUsername={loaded ? username : undefined}
-        loadingUsername={result ? undefined : username}
+        loadingUsername={loading ? username : undefined}
         onSubmit={(value) => {
           if (value === username) {
-            onRefresh(loaded);
+            onRefresh(loaded ? contributions : undefined);
           } else {
             void navigate(`/${encodeURIComponent(value)}`);
           }
         }}
       />
       {username && (
-        <FetchStatus
-          username={username}
-          loading={!result}
-          error={result !== undefined && "error" in result}
-        />
+        <FetchStatus username={username} loading={loading} error={error} />
       )}
     </div>
   );
@@ -103,16 +100,37 @@ function HomePageContent({
 /**
  * Renders the home page content once the contributions promise resolves.
  * @param props - The component props, passed on to the home page content.
+ * @param props.loadedContributions - The contributions from an earlier fetch for the username, kept shown if this one fails.
  * @param props.promise - The pending result of fetching the user's contributions.
  * @returns The home page content for the resolved result.
  */
 function ResolvedHomePage({
+  loadedContributions,
   promise,
   ...props
-}: HomePageContentProps & { promise: Promise<ContributionResult> }) {
+}: HomePageContentProps & {
+  loadedContributions: ContributionDay[] | undefined;
+  promise: Promise<ContributionResult>;
+}) {
   const result = use(promise);
 
-  return <HomePageContent {...props} result={result} />;
+  return "contributions" in result ? (
+    <HomePageContent
+      {...props}
+      contributions={result.contributions}
+      loaded={true}
+      loading={false}
+      error={false}
+    />
+  ) : (
+    <HomePageContent
+      {...props}
+      contributions={loadedContributions ?? []}
+      loaded={loadedContributions !== undefined}
+      loading={false}
+      error={true}
+    />
+  );
 }
 
 /**
@@ -123,23 +141,37 @@ function ResolvedHomePage({
  */
 function LoadedHomePage({ username }: { username: string | undefined }) {
   const [promise, setPromise] = useState(() => fetchContributions(username));
-  const [hasLoaded, setHasLoaded] = useState(false);
+  const [loadedContributions, setLoadedContributions] =
+    useState<ContributionDay[]>();
   const [input, setInput] = useState(username ?? "");
 
   const props: HomePageContentProps = {
     username,
-    hasLoaded,
     input,
     onInputChange: setInput,
-    onRefresh: (loaded) => {
-      setHasLoaded(loaded);
+    onRefresh: (contributions) => {
+      setLoadedContributions(contributions);
       setPromise(fetchContributions(username));
     },
   };
 
   return (
-    <Suspense fallback={<HomePageContent {...props} result={undefined} />}>
-      <ResolvedHomePage {...props} promise={promise} />
+    <Suspense
+      fallback={
+        <HomePageContent
+          {...props}
+          contributions={loadedContributions ?? []}
+          loaded={loadedContributions !== undefined}
+          loading={true}
+          error={false}
+        />
+      }
+    >
+      <ResolvedHomePage
+        {...props}
+        loadedContributions={loadedContributions}
+        promise={promise}
+      />
     </Suspense>
   );
 }
