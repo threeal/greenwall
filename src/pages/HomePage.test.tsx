@@ -1,6 +1,7 @@
 import { createMemoryRouter, RouterProvider } from "react-router";
-import { describe, expect, test } from "vitest";
+import { beforeEach, describe, expect, test } from "vitest";
 import { render } from "vitest-browser-react";
+import { storeContributions } from "../contributionsStorage.ts";
 import HomePage from "./HomePage.tsx";
 
 /**
@@ -28,6 +29,10 @@ function visibleTooltips() {
 }
 
 describe("HomePage", () => {
+  beforeEach(() => {
+    localStorage.clear();
+  });
+
   test("shows an empty, enabled form when there is no username", async () => {
     const { screen } = await renderAt("/");
     await expect.element(screen.getByRole("textbox")).toHaveValue("");
@@ -67,6 +72,35 @@ describe("HomePage", () => {
         })
         .toBeEnabled();
       await expect.element(screen.getByRole("status")).toBeEmptyDOMElement();
+    },
+  );
+
+  test(
+    "shows the stored contributions while loading a fresh page",
+    { timeout: 20_000 },
+    async () => {
+      const today = new Date();
+      const date = `${String(today.getFullYear())}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
+      storeContributions("threeal", [{ date, count: 999, level: 4 }]);
+
+      const { screen } = await renderAt("/threeal");
+      await expect
+        .element(screen.getByRole("status"))
+        .toHaveTextContent("loading contributions for threeal…");
+      expect(
+        visibleTooltips().some((tooltip) =>
+          tooltip?.startsWith("999 contributions"),
+        ),
+      ).toBe(true);
+      await expect
+        .element(screen.getByRole("button", { name: "Refresh" }))
+        .toBeDisabled();
+
+      await expect
+        .element(screen.getByRole("button", { name: "Refresh" }), {
+          timeout: 15_000,
+        })
+        .toBeEnabled();
     },
   );
 

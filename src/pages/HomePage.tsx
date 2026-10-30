@@ -3,6 +3,10 @@ import { useNavigate, useParams } from "react-router";
 import ContributionsGrid from "../components/ContributionsGrid.tsx";
 import FetchStatus from "../components/FetchStatus.tsx";
 import UsernameForm from "../components/UsernameForm.tsx";
+import {
+  loadStoredContributions,
+  storeContributions,
+} from "../contributionsStorage.ts";
 import type { ContributionDay } from "../types.ts";
 import styles from "./HomePage.module.css";
 
@@ -10,7 +14,7 @@ type ContributionResult =
   { contributions: ContributionDay[] } | { error: true };
 
 /**
- * Fetches a user's contributions from the jogruber contributions API.
+ * Fetches a user's contributions from the jogruber contributions API, storing them for later page loads.
  * @param username - The GitHub username, or undefined when none is given.
  * @returns The user's contributions, none without a username, or an error result if the request fails.
  */
@@ -30,6 +34,7 @@ async function fetchContributions(
     const data = (await response.json()) as {
       contributions: ContributionDay[];
     };
+    storeContributions(username, data.contributions);
     return { contributions: data.contributions };
   } catch {
     return { error: true };
@@ -135,14 +140,16 @@ function ResolvedHomePage({
 
 /**
  * Starts fetching a user's contributions and shows the loading state until they resolve, refetching on refresh.
+ * Until the first fetch resolves, the contributions stored by an earlier page load are shown, if any.
  * @param props - The component props.
  * @param props.username - The username from the path, if any.
  * @returns The home page content, wrapped in a Suspense boundary.
  */
 function LoadedHomePage({ username }: { username: string | undefined }) {
   const [promise, setPromise] = useState(() => fetchContributions(username));
-  const [loadedContributions, setLoadedContributions] =
-    useState<ContributionDay[]>();
+  const [loadedContributions, setLoadedContributions] = useState(() =>
+    username ? loadStoredContributions(username) : undefined,
+  );
   const [input, setInput] = useState(username ?? "");
 
   const props: HomePageContentProps = {
