@@ -72,6 +72,22 @@
   }
 }
 
+:root[data-season="halloween"] {
+  --color-level-1: #ffee4a;
+  --color-level-2: #ffc501;
+  --color-level-3: #fe9600;
+  --color-level-4: #03001c;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root[data-season="halloween"] {
+    --color-level-1: #631c03;
+    --color-level-2: #bd561d;
+    --color-level-3: #fa7a18;
+    --color-level-4: #fddf68;
+  }
+}
+
 body {
   display: flex;
   place-items: center;
