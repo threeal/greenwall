@@ -3,14 +3,14 @@
   cursor: pointer;
   border: 1px solid transparent;
   border-radius: 8px;
-  background-color: #f9f9f9;
+  background-color: var(--color-button-bg);
   padding: 0.6em 1.2em;
   font-weight: 500;
   font-size: 1em;
   font-family: inherit;
 }
 .button:hover {
-  border-color: #646cff;
+  border-color: var(--color-button-border-hover);
 }
 .button:focus,
 .button:focus-visible {

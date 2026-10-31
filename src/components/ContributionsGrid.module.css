@@ -6,7 +6,7 @@
   display: inline-flex;
   flex-direction: column;
   gap: 6px;
-  color: #57606a;
+  color: var(--color-fg-muted);
   font-size: 12px;
 }
 
@@ -56,32 +56,32 @@
   transform: translateX(-50%);
   z-index: 1;
   border-radius: 6px;
-  background-color: #25292e;
+  background-color: var(--color-tooltip-bg);
   padding: 4px 8px;
   pointer-events: none;
   content: attr(data-tooltip);
-  color: #ffffff;
+  color: var(--color-tooltip-fg);
   white-space: nowrap;
 }
 
 .level0 {
-  background-color: #ebedf0;
+  background-color: var(--color-level-0);
 }
 
 .level1 {
-  background-color: #9be9a8;
+  background-color: var(--color-level-1);
 }
 
 .level2 {
-  background-color: #40c463;
+  background-color: var(--color-level-2);
 }
 
 .level3 {
-  background-color: #30a14e;
+  background-color: var(--color-level-3);
 }
 
 .level4 {
-  background-color: #216e39;
+  background-color: var(--color-level-4);
 }
 
 .legend {
