@@ -28,6 +28,7 @@ function visibleTooltips() {
     .map((cell) => cell.dataset.tooltip);
 }
 
+// These tests call the real contributions API on purpose, to also catch the API going away or changing shape.
 describe("HomePage", () => {
   beforeEach(() => {
     localStorage.clear();
