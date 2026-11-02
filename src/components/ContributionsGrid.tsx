@@ -72,7 +72,7 @@ function describeDay(date: Date, count: number) {
  * Lays out a year of contributions as week columns ending on the week of `today`.
  * @param contributions - The contribution days to place on the grid.
  * @param today - The last day shown; later days in its week are left out.
- * @returns The grid's week columns and the month labels above them.
+ * @returns The grid's week columns, the month labels above them, and the total contributions on the grid's days.
  */
 export function buildGrid(contributions: ContributionDay[], today: Date) {
   const byDate = new Map(contributions.map((day) => [day.date, day]));
@@ -82,6 +82,7 @@ export function buildGrid(contributions: ContributionDay[], today: Date) {
   const weeks: Cell[][] = [];
   const monthLabels: MonthLabel[] = [];
   let lastMonth = -1;
+  let total = 0;
 
   for (let column = 0; column < 53; column++) {
     const week: Cell[] = [];
@@ -91,6 +92,7 @@ export function buildGrid(contributions: ContributionDay[], today: Date) {
       if (date > today) break;
       const key = `${String(date.getFullYear())}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
       const day = byDate.get(key);
+      total += day?.count ?? 0;
       week.push({
         date: key,
         level: day?.level ?? 0,
@@ -104,7 +106,17 @@ export function buildGrid(contributions: ContributionDay[], today: Date) {
     weeks.push(week);
   }
 
-  return { weeks, monthLabels };
+  return { weeks, monthLabels, total };
+}
+
+/**
+ * Describes the total contributions on the grid the way GitHub's graph does.
+ * @param total - The total contributions on the grid's days.
+ * @returns A phrase like "1,234 contributions in the last year".
+ */
+function describeTotal(total: number) {
+  const noun = total === 1 ? "contribution" : "contributions";
+  return `${total.toLocaleString("en-US")} ${noun} in the last year`;
 }
 
 /**
@@ -128,16 +140,19 @@ function levelClass(level: 0 | 1 | 2 | 3 | 4) {
  * @param props - The component props.
  * @param props.contributions - The contribution days to display.
  * @param props.today - The last day shown on the grid.
+ * @param props.showTotal - Whether to show the total contributions on the grid next to the legend.
  * @returns The contributions grid element.
  */
 export default function ContributionsGrid({
   contributions,
   today,
+  showTotal = false,
 }: {
   contributions: ContributionDay[];
   today: Date;
+  showTotal?: boolean;
 }) {
-  const { weeks, monthLabels } = buildGrid(contributions, today);
+  const { weeks, monthLabels, total } = buildGrid(contributions, today);
 
   return (
     <div className={styles.wrapper}>
@@ -167,6 +182,9 @@ export default function ContributionsGrid({
         </div>
       </div>
       <div className={styles.legend}>
+        {showTotal && (
+          <span className={styles.total}>{describeTotal(total)}</span>
+        )}
         <span>Less</span>
         {LEVELS.map((level) => (
           <div key={level} className={levelClass(level)} />
