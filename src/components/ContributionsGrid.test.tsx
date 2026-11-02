@@ -6,12 +6,16 @@ import ContributionsGrid, { buildGrid } from "./ContributionsGrid.tsx";
 
 const TODAY = new Date(2026, 7, 24); // Monday, Aug 24 2026
 
-test("buildGrid returns 53 weeks of 7 days, all level 0 when there is no data", () => {
+test("buildGrid returns 53 weeks ending today, all level 0 when there is no data", () => {
   const { weeks, monthLabels } = buildGrid([], TODAY);
 
   expect(weeks).toHaveLength(53);
+  expect(weeks.map((week) => week.length)).toEqual([
+    ...Array.from({ length: 52 }, () => 7),
+    2,
+  ]);
+  expect(weeks.at(-1)?.at(-1)?.date).toBe("2026-08-24");
   for (const week of weeks) {
-    expect(week).toHaveLength(7);
     for (const cell of week) {
       expect(cell.level).toBe(0);
     }
@@ -19,7 +23,7 @@ test("buildGrid returns 53 weeks of 7 days, all level 0 when there is no data", 
   expect(monthLabels.some((label) => label.text === "Aug")).toBe(true);
 });
 
-test("buildGrid maps contribution levels onto matching dates and ignores dates after today", () => {
+test("buildGrid maps contribution levels onto matching dates and leaves out dates after today", () => {
   const contributions: ContributionDay[] = [
     { date: "2026-08-20", count: 2, level: 2 },
     { date: "2026-08-24", count: 5, level: 3 },
@@ -32,7 +36,13 @@ test("buildGrid maps contribution levels onto matching dates and ignores dates a
   expect(byDate.get("2026-08-20")).toBe(2);
   expect(byDate.get("2026-08-24")).toBe(3);
   expect(byDate.get("2026-08-21")).toBe(0);
-  expect(byDate.get("2026-08-26")).toBe(0);
+  expect(byDate.has("2026-08-26")).toBe(false);
+});
+
+test("buildGrid leaves out the month label for a first of the month after today", () => {
+  const { monthLabels } = buildGrid([], new Date(2026, 7, 31)); // Monday, Aug 31 2026, the day before Tuesday, Sep 1
+
+  expect(monthLabels.at(-1)?.text).toBe("Aug");
 });
 
 test("buildGrid describes each day up to today in a tooltip", () => {
@@ -49,7 +59,7 @@ test("buildGrid describes each day up to today in a tooltip", () => {
   expect(byDate.get("2026-08-03")).toBe("No contributions on August 3rd.");
   expect(byDate.get("2026-08-12")).toBe("No contributions on August 12th.");
   expect(byDate.get("2026-08-22")).toBe("7 contributions on August 22nd.");
-  expect(byDate.get("2026-08-25")).toBeUndefined();
+  expect(byDate.has("2026-08-25")).toBe(false);
 });
 
 test("renders an empty grid with month and day labels when there is no data", async () => {
@@ -62,9 +72,11 @@ test("renders an empty grid with month and day labels when there is no data", as
   await expect.element(screen.getByText("Aug")).toBeVisible();
   await expect.element(screen.getByText("Less")).toBeVisible();
   await expect.element(screen.getByText("More")).toBeVisible();
-  expect(document.querySelectorAll(`.${styles.cell}`)).toHaveLength(53 * 7 + 5);
+  expect(document.querySelectorAll(`.${styles.cell}`)).toHaveLength(
+    52 * 7 + 2 + 5,
+  );
   expect(document.querySelectorAll(`.${styles.level0}`)).toHaveLength(
-    53 * 7 + 1,
+    52 * 7 + 2 + 1,
   );
 });
 

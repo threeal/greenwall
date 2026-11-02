@@ -27,7 +27,7 @@ const LEVELS = [0, 1, 2, 3, 4] as const;
 interface Cell {
   date: string;
   level: 0 | 1 | 2 | 3 | 4;
-  tooltip?: string;
+  tooltip: string;
 }
 
 interface MonthLabel {
@@ -71,7 +71,7 @@ function describeDay(date: Date, count: number) {
 /**
  * Lays out a year of contributions as week columns ending on the week of `today`.
  * @param contributions - The contribution days to place on the grid.
- * @param today - The last day shown; later days in its week are left empty.
+ * @param today - The last day shown; later days in its week are left out.
  * @returns The grid's week columns and the month labels above them.
  */
 export function buildGrid(contributions: ContributionDay[], today: Date) {
@@ -88,17 +88,14 @@ export function buildGrid(contributions: ContributionDay[], today: Date) {
     for (let row = 0; row < 7; row++) {
       const date = new Date(start);
       date.setDate(start.getDate() + column * 7 + row);
+      if (date > today) break;
       const key = `${String(date.getFullYear())}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
       const day = byDate.get(key);
-      week.push(
-        date > today
-          ? { date: key, level: 0 }
-          : {
-              date: key,
-              level: day?.level ?? 0,
-              tooltip: describeDay(date, day?.count ?? 0),
-            },
-      );
+      week.push({
+        date: key,
+        level: day?.level ?? 0,
+        tooltip: describeDay(date, day?.count ?? 0),
+      });
       if (date.getDate() === 1 && date.getMonth() !== lastMonth) {
         monthLabels.push({ column, text: MONTHS[date.getMonth()] });
         lastMonth = date.getMonth();
