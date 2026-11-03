@@ -42,6 +42,9 @@ describe("HomePage", () => {
       .element(screen.getByRole("button", { name: "View contributions" }))
       .toBeEnabled();
     await expect.element(screen.getByRole("status")).not.toBeInTheDocument();
+    await expect
+      .element(screen.getByText(/in the last year/))
+      .not.toBeInTheDocument();
   });
 
   test("navigates to the submitted username's path", async () => {
@@ -66,6 +69,9 @@ describe("HomePage", () => {
       await expect
         .element(screen.getByRole("button", { name: "View contributions" }))
         .toBeDisabled();
+      await expect
+        .element(screen.getByText(/in the last year/))
+        .not.toBeInTheDocument();
 
       await expect
         .element(screen.getByRole("button", { name: "Refresh" }), {
@@ -73,6 +79,9 @@ describe("HomePage", () => {
         })
         .toBeEnabled();
       await expect.element(screen.getByRole("status")).toBeEmptyDOMElement();
+      await expect
+        .element(screen.getByText(/contributions? in the last year/))
+        .toBeVisible();
     },
   );
 
@@ -93,6 +102,9 @@ describe("HomePage", () => {
           tooltip?.startsWith("999 contributions"),
         ),
       ).toBe(true);
+      await expect
+        .element(screen.getByText("999 contributions in the last year"))
+        .toBeVisible();
       await expect
         .element(screen.getByRole("button", { name: "Refresh" }))
         .toBeDisabled();

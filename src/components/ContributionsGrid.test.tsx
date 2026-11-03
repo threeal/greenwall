@@ -39,6 +39,17 @@ test("buildGrid maps contribution levels onto matching dates and leaves out date
   expect(byDate.has("2026-08-26")).toBe(false);
 });
 
+test("buildGrid totals the contributions on the grid's days only", () => {
+  const contributions: ContributionDay[] = [
+    { date: "2025-08-23", count: 100, level: 4 }, // before the grid's first day, must not count
+    { date: "2025-08-24", count: 3, level: 1 },
+    { date: "2026-08-24", count: 5, level: 3 },
+    { date: "2026-08-25", count: 100, level: 4 }, // after TODAY, must not count
+  ];
+
+  expect(buildGrid(contributions, TODAY).total).toBe(8);
+});
+
 test("buildGrid leaves out the month label for a first of the month after today", () => {
   const { monthLabels } = buildGrid([], new Date(2026, 7, 31)); // Monday, Aug 31 2026, the day before Tuesday, Sep 1
 
@@ -89,6 +100,41 @@ test("colors a cell according to the contribution level for its date", async () 
   );
   await expect.element(screen.getByText("Aug")).toBeVisible();
   expect(document.querySelectorAll(`.${styles.level3}`)).toHaveLength(2);
+});
+
+test("shows the total contributions on the grid when asked to", async () => {
+  const contributions: ContributionDay[] = [
+    { date: "2026-08-20", count: 1234, level: 4 },
+    { date: "2026-08-24", count: 1, level: 1 },
+  ];
+  const screen = await render(
+    <ContributionsGrid contributions={contributions} today={TODAY} showTotal />,
+  );
+  await expect
+    .element(screen.getByText("1,235 contributions in the last year"))
+    .toBeVisible();
+});
+
+test("shows a single contribution in the total as singular", async () => {
+  const contributions: ContributionDay[] = [
+    { date: "2026-08-24", count: 1, level: 1 },
+  ];
+  const screen = await render(
+    <ContributionsGrid contributions={contributions} today={TODAY} showTotal />,
+  );
+  await expect
+    .element(screen.getByText("1 contribution in the last year"))
+    .toBeVisible();
+});
+
+test("hides the total contributions by default", async () => {
+  const screen = await render(
+    <ContributionsGrid contributions={[]} today={TODAY} />,
+  );
+  await expect.element(screen.getByText("Less")).toBeVisible();
+  await expect
+    .element(screen.getByText(/in the last year/))
+    .not.toBeInTheDocument();
 });
 
 test("attaches a tooltip describing the day to a cell", async () => {

@@ -81,7 +81,11 @@ function HomePageContent({
 
   return (
     <div className={styles.page}>
-      <ContributionsGrid contributions={contributions} today={today} />
+      <ContributionsGrid
+        contributions={contributions}
+        today={today}
+        showTotal={loaded && Boolean(username)}
+      />
       <UsernameForm
         value={input}
         onValueChange={onInputChange}

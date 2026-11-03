@@ -90,3 +90,8 @@
   align-items: center;
   gap: 4px;
 }
+
+.total {
+  margin-right: auto;
+  margin-left: calc(var(--day-label-width) + var(--cell-gap));
+}
