@@ -1,5 +1,6 @@
 import { expect, test } from "vitest";
 import { render } from "vitest-browser-react";
+import { userEvent } from "vitest/browser";
 import type { ContributionDay } from "../types.ts";
 import styles from "./ContributionsGrid.module.css";
 import ContributionsGrid, { buildGrid } from "./ContributionsGrid.tsx";
@@ -77,10 +78,10 @@ test("renders an empty grid with month and day labels when there is no data", as
   const screen = await render(
     <ContributionsGrid contributions={[]} today={TODAY} />,
   );
-  await expect.element(screen.getByText("Mon")).toBeVisible();
-  await expect.element(screen.getByText("Wed")).toBeVisible();
-  await expect.element(screen.getByText("Fri")).toBeVisible();
-  await expect.element(screen.getByText("Aug")).toBeVisible();
+  await expect.element(screen.getByText("Mon", { exact: true })).toBeVisible();
+  await expect.element(screen.getByText("Wed", { exact: true })).toBeVisible();
+  await expect.element(screen.getByText("Fri", { exact: true })).toBeVisible();
+  await expect.element(screen.getByText("Aug", { exact: true })).toBeVisible();
   await expect.element(screen.getByText("Less")).toBeVisible();
   await expect.element(screen.getByText("More")).toBeVisible();
   expect(document.querySelectorAll(`.${styles.cell}`)).toHaveLength(
@@ -98,7 +99,7 @@ test("colors a cell according to the contribution level for its date", async () 
   const screen = await render(
     <ContributionsGrid contributions={contributions} today={TODAY} />,
   );
-  await expect.element(screen.getByText("Aug")).toBeVisible();
+  await expect.element(screen.getByText("Aug", { exact: true })).toBeVisible();
   expect(document.querySelectorAll(`.${styles.level3}`)).toHaveLength(2);
 });
 
@@ -144,8 +145,69 @@ test("attaches a tooltip describing the day to a cell", async () => {
   const screen = await render(
     <ContributionsGrid contributions={contributions} today={TODAY} />,
   );
-  await expect.element(screen.getByText("Aug")).toBeVisible();
+  await expect.element(screen.getByText("Aug", { exact: true })).toBeVisible();
   expect(
     document.querySelector('[data-tooltip="10 contributions on August 24th."]'),
   ).not.toBeNull();
+});
+
+test("exposes the grid to screen readers by weekday, with each cell named after its tooltip", async () => {
+  const contributions: ContributionDay[] = [
+    { date: "2026-08-24", count: 10, level: 3 },
+  ];
+  const screen = await render(
+    <ContributionsGrid contributions={contributions} today={TODAY} />,
+  );
+  await expect
+    .element(screen.getByRole("grid", { name: "Contributions" }))
+    .toBeVisible();
+  expect(screen.getByRole("row").elements()).toHaveLength(7);
+  await expect
+    .element(screen.getByRole("rowheader", { name: "Tuesday" }))
+    .toBeInTheDocument();
+  await expect
+    .element(
+      screen.getByRole("gridcell", {
+        name: "10 contributions on August 24th.",
+      }),
+    )
+    .toBeVisible();
+});
+
+test("moves the focus between cells with the arrow keys", async () => {
+  const contributions: ContributionDay[] = [
+    { date: "2025-08-24", count: 1, level: 1 }, // the grid's first day
+    { date: "2026-08-24", count: 5, level: 3 },
+  ];
+  const screen = await render(
+    <ContributionsGrid contributions={contributions} today={TODAY} />,
+  );
+  const cell = (name: string) => screen.getByRole("gridcell", { name });
+
+  await userEvent.keyboard("{Tab}");
+  await expect.element(cell("5 contributions on August 24th.")).toHaveFocus();
+
+  await userEvent.keyboard("a{ArrowDown}{ArrowRight}");
+  await expect.element(cell("5 contributions on August 24th.")).toHaveFocus();
+
+  await userEvent.keyboard("{ArrowLeft}");
+  await expect.element(cell("No contributions on August 17th.")).toHaveFocus();
+
+  await userEvent.keyboard("{ArrowUp}{ArrowUp}");
+  await expect.element(cell("No contributions on August 16th.")).toHaveFocus();
+
+  await cell("1 contribution on August 24th.").click();
+  await userEvent.keyboard("{ArrowLeft}");
+  await expect.element(cell("1 contribution on August 24th.")).toHaveFocus();
+
+  await userEvent.keyboard("{ArrowRight}");
+  await expect.element(cell("No contributions on August 31st.")).toHaveFocus();
+});
+
+test("leaves only one cell reachable with the Tab key", async () => {
+  const screen = await render(
+    <ContributionsGrid contributions={[]} today={TODAY} />,
+  );
+  await expect.element(screen.getByRole("grid")).toBeVisible();
+  expect(document.querySelectorAll('td[tabindex="0"]')).toHaveLength(1);
 });
