@@ -1,3 +1,4 @@
+import { useState, type KeyboardEvent } from "react";
 import type { ContributionDay } from "../types.ts";
 import styles from "./ContributionsGrid.module.css";
 
@@ -16,11 +17,22 @@ const MONTHS = [
   "Dec",
 ];
 
-const DAY_LABELS: [row: number, text: string][] = [
-  [1, "Mon"],
-  [3, "Wed"],
-  [5, "Fri"],
+const WEEKDAYS = [
+  "Sunday",
+  "Monday",
+  "Tuesday",
+  "Wednesday",
+  "Thursday",
+  "Friday",
+  "Saturday",
 ];
+
+const MOVES: Partial<Record<string, [column: number, row: number]>> = {
+  ArrowLeft: [-1, 0],
+  ArrowRight: [1, 0],
+  ArrowUp: [0, -1],
+  ArrowDown: [0, 1],
+};
 
 const LEVELS = [0, 1, 2, 3, 4] as const;
 
@@ -137,6 +149,7 @@ function levelClass(level: 0 | 1 | 2 | 3 | 4) {
 
 /**
  * Renders a GitHub-style contributions grid with month and day labels and a legend.
+ * The grid is a table with a row per weekday, and its cells can be moved between with the arrow keys.
  * @param props - The component props.
  * @param props.contributions - The contribution days to display.
  * @param props.today - The last day shown on the grid.
@@ -153,34 +166,78 @@ export default function ContributionsGrid({
   showTotal?: boolean;
 }) {
   const { weeks, monthLabels, total } = buildGrid(contributions, today);
+  const [focused, setFocused] = useState<{ column: number; row: number }>();
+  const current = focused ?? {
+    column: weeks.length - 1,
+    row: weeks[weeks.length - 1].length - 1,
+  };
+
+  /**
+   * Moves the focus to the neighboring cell in the direction of an arrow key, if there is one.
+   * @param event - The key event from within the grid.
+   */
+  function handleKeyDown(event: KeyboardEvent<HTMLTableElement>) {
+    const move = MOVES[event.key];
+    if (!move) return;
+    event.preventDefault();
+    const column = current.column + move[0];
+    const row = current.row + move[1];
+    if (column < 0 || column >= weeks.length) return;
+    if (row < 0 || row >= weeks[column].length) return;
+    event.currentTarget.rows[row].cells[column + 1].focus();
+  }
 
   return (
     <div className={styles.wrapper}>
-      <div className={styles.monthLabels}>
+      <div className={styles.monthLabels} aria-hidden="true">
         {monthLabels.map(({ column, text }) => (
           <span key={column} style={{ gridColumnStart: column + 1 }}>
             {text}
           </span>
         ))}
       </div>
-      <div className={styles.body}>
-        <div className={styles.dayLabels}>
-          {DAY_LABELS.map(([row, text]) => (
-            <span key={row} style={{ gridRowStart: row + 1 }}>
-              {text}
-            </span>
+      <table
+        className={styles.cells}
+        role="grid"
+        aria-readonly="true"
+        aria-label="Contributions"
+        onKeyDown={handleKeyDown}
+      >
+        <tbody>
+          {WEEKDAYS.map((weekday, row) => (
+            <tr key={weekday}>
+              <th scope="row" className={styles.dayLabel}>
+                <span className={styles.srOnly}>{weekday}</span>
+                {row % 2 === 1 && (
+                  <span className={styles.dayLabelText} aria-hidden="true">
+                    {weekday.slice(0, 3)}
+                  </span>
+                )}
+              </th>
+              {weeks
+                .filter((week) => row < week.length)
+                .map((week, column) => {
+                  const cell = week[row];
+                  const isCurrent =
+                    column === current.column && row === current.row;
+                  return (
+                    <td
+                      key={cell.date}
+                      className={levelClass(cell.level)}
+                      data-tooltip={cell.tooltip}
+                      tabIndex={isCurrent ? 0 : -1}
+                      onFocus={() => {
+                        setFocused({ column, row });
+                      }}
+                    >
+                      <span className={styles.srOnly}>{cell.tooltip}</span>
+                    </td>
+                  );
+                })}
+            </tr>
           ))}
-        </div>
-        <div className={styles.cells}>
-          {weeks.flat().map((cell) => (
-            <div
-              key={cell.date}
-              className={levelClass(cell.level)}
-              data-tooltip={cell.tooltip}
-            />
-          ))}
-        </div>
-      </div>
+        </tbody>
+      </table>
       <div className={styles.legend}>
         {showTotal && (
           <span className={styles.total}>{describeTotal(total)}</span>
