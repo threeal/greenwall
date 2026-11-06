@@ -14,7 +14,7 @@ type ContributionResult =
   { contributions: ContributionDay[] } | { error: true };
 
 /**
- * Fetches a user's contributions from the jogruber contributions API, storing them for later page loads.
+ * Fetches a user's last year of contributions from the jogruber contributions API, storing them for later page loads.
  * @param username - The GitHub username, or undefined when none is given.
  * @returns The user's contributions, none without a username, or an error result if the request fails.
  */
@@ -26,7 +26,7 @@ async function fetchContributions(
   }
   try {
     const response = await fetch(
-      `https://github-contributions-api.jogruber.de/v4/${encodeURIComponent(username)}`,
+      `https://github-contributions-api.jogruber.de/v4/${encodeURIComponent(username)}?y=last`,
     );
     if (!response.ok) {
       throw new Error();
