@@ -28,6 +28,10 @@
   --color-button-bg: #f9f9f9;
   --color-button-border-hover: #646cff;
 
+  --color-icon-button-bg: #f6f8fa;
+  --color-icon-button-bg-hover: #eff2f5;
+  --color-icon-button-border: #d1d9e0;
+
   background-color: var(--color-bg);
   color: var(--color-fg);
 
@@ -43,7 +47,7 @@
 }
 
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-dark="false"]) {
     --color-bg: #0d1117;
     --color-fg: #e6edf3;
     --color-fg-muted: #8d96a0;
@@ -69,7 +73,49 @@
     --color-submit-border: rgba(240, 246, 252, 0.1);
 
     --color-button-bg: #1a1a1a;
+
+    --color-icon-button-bg: #212830;
+    --color-icon-button-bg-hover: #262c36;
+    --color-icon-button-border: #3d444d;
   }
+}
+
+:root[data-dark="true"] {
+  color-scheme: dark;
+
+  --color-bg: #0d1117;
+  --color-fg: #e6edf3;
+  --color-fg-muted: #8d96a0;
+  --color-error: #f85149;
+  --color-focus: #1f6feb;
+  --color-focus-shadow: rgba(31, 111, 235, 0.3);
+
+  --color-level-0: #161b22;
+  --color-level-1: #0e4429;
+  --color-level-2: #006d32;
+  --color-level-3: #26a641;
+  --color-level-4: #39d353;
+
+  --color-tooltip-bg: #3d444d;
+
+  --color-input-bg: #0d1117;
+  --color-input-border: #3d444d;
+  --color-input-fg: #e6edf3;
+
+  --color-submit-bg: #238636;
+  --color-submit-bg-hover: #2ea043;
+  --color-submit-bg-disabled: #105823;
+  --color-submit-border: rgba(240, 246, 252, 0.1);
+
+  --color-button-bg: #1a1a1a;
+
+  --color-icon-button-bg: #212830;
+  --color-icon-button-bg-hover: #262c36;
+  --color-icon-button-border: #3d444d;
+}
+
+:root[data-dark="false"] {
+  color-scheme: light;
 }
 
 :root[data-season="halloween"] {
@@ -80,12 +126,19 @@
 }
 
 @media (prefers-color-scheme: dark) {
-  :root[data-season="halloween"] {
+  :root[data-season="halloween"]:not([data-dark="false"]) {
     --color-level-1: #631c03;
     --color-level-2: #bd561d;
     --color-level-3: #fa7a18;
     --color-level-4: #fddf68;
   }
+}
+
+:root[data-season="halloween"][data-dark="true"] {
+  --color-level-1: #631c03;
+  --color-level-2: #bd561d;
+  --color-level-3: #fa7a18;
+  --color-level-4: #fddf68;
 }
 
 body {
