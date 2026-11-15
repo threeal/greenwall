@@ -1,0 +1,120 @@
+.openButton {
+  display: grid;
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  place-items: center;
+  cursor: pointer;
+  border: 1px solid var(--color-icon-button-border);
+  border-radius: 6px;
+  background-color: var(--color-icon-button-bg);
+  padding: 0;
+  width: 32px;
+  height: 32px;
+  color: var(--color-fg-muted);
+}
+
+.openButton:hover {
+  background-color: var(--color-icon-button-bg-hover);
+}
+
+.openButton:focus-visible,
+.closeButton:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: -2px;
+}
+
+.dialog {
+  box-sizing: border-box;
+  box-shadow: var(--color-dialog-shadow);
+  border: none;
+  border-radius: 12px;
+  background-color: var(--color-dialog-bg);
+  padding: 0;
+  width: min(320px, calc(100vw - 32px));
+  color: var(--color-fg);
+  text-align: left;
+}
+
+.dialog::backdrop {
+  background-color: var(--color-dialog-backdrop);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-bottom: 1px solid var(--color-dialog-border);
+  padding: 8px;
+}
+
+.title {
+  flex: 1;
+  margin: 0;
+  padding: 6px 8px;
+  font-weight: 600;
+  font-size: 14px;
+  line-height: 20px;
+}
+
+.closeButton {
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  border: none;
+  border-radius: 6px;
+  background-color: transparent;
+  padding: 0;
+  width: 32px;
+  height: 32px;
+  color: var(--color-fg-muted);
+}
+
+.closeButton:hover {
+  background-color: var(--color-invisible-button-bg-hover);
+}
+
+.body {
+  padding: 16px;
+}
+
+.label {
+  display: block;
+  margin-bottom: 4px;
+  font-weight: 600;
+  font-size: 14px;
+  line-height: 20px;
+}
+
+.select {
+  position: relative;
+  color: var(--color-fg-muted);
+}
+
+.select select {
+  appearance: none;
+  cursor: pointer;
+  border: 1px solid var(--color-input-border);
+  border-radius: 6px;
+  background-color: var(--color-input-bg);
+  padding: 5px 32px 5px 12px;
+  width: 100%;
+  color: var(--color-input-fg);
+  font-size: 14px;
+  line-height: 20px;
+  font-family: inherit;
+}
+
+.select select:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--color-focus-shadow);
+  border-color: var(--color-focus);
+}
+
+.select svg {
+  position: absolute;
+  top: 50%;
+  right: 8px;
+  transform: translateY(-50%);
+  pointer-events: none;
+}

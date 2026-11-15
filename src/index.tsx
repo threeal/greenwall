@@ -1,7 +1,7 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { RouterProvider } from "react-router";
-import ThemeToggle from "./components/ThemeToggle.tsx";
+import Settings from "./components/Settings.tsx";
 import { router } from "./router.tsx";
 import { isHalloween } from "./season.ts";
 
@@ -16,7 +16,7 @@ const root = document.getElementById("root");
 if (root) {
   createRoot(root).render(
     <StrictMode>
-      <ThemeToggle initialDarkMode={darkMode} />
+      <Settings initialDarkMode={darkMode} />
       <RouterProvider router={router} />
     </StrictMode>,
   );
