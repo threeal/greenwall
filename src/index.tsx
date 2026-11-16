@@ -4,19 +4,20 @@ import { RouterProvider } from "react-router";
 import Settings from "./components/Settings.tsx";
 import { router } from "./router.tsx";
 import { isHalloween } from "./season.ts";
+import { applyTheme, loadSettings } from "./settingsStorage.ts";
 
 if (isHalloween(new Date())) {
   document.documentElement.dataset.season = "halloween";
 }
 
-const darkMode = matchMedia("(prefers-color-scheme: dark)").matches;
-document.documentElement.dataset.dark = String(darkMode);
+const settings = loadSettings();
+applyTheme(settings.theme);
 
 const root = document.getElementById("root");
 if (root) {
   createRoot(root).render(
     <StrictMode>
-      <Settings initialDarkMode={darkMode} />
+      <Settings initialSettings={settings} />
       <RouterProvider router={router} />
     </StrictMode>,
   );

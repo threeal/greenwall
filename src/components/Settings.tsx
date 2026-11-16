@@ -1,19 +1,26 @@
 import { useRef, useState } from "react";
+import {
+  applyTheme,
+  type Settings as SettingsValues,
+  storeSettings,
+  type Theme,
+} from "../settingsStorage.ts";
 import styles from "./Settings.module.css";
 
 /**
- * Renders a button that opens a settings panel, where the page's theme can be chosen between light and dark.
+ * Renders a button that opens a settings panel, where the page's theme can be chosen.
+ * Each change applies right away and is stored for later visits.
  * @param props - The component props.
- * @param props.initialDarkMode - Whether the page starts in dark mode.
+ * @param props.initialSettings - The settings the page starts with.
  * @returns A button element followed by its settings dialog.
  */
 export default function Settings({
-  initialDarkMode,
+  initialSettings,
 }: {
-  initialDarkMode: boolean;
+  initialSettings: SettingsValues;
 }) {
   const dialogRef = useRef<HTMLDialogElement>(null);
-  const [darkMode, setDarkMode] = useState(initialDarkMode);
+  const [settings, setSettings] = useState(initialSettings);
 
   return (
     <>
@@ -70,13 +77,18 @@ export default function Settings({
           <div className={styles.select}>
             <select
               id="settings-theme"
-              value={darkMode ? "dark" : "light"}
+              value={settings.theme}
               onChange={(event) => {
-                const darkMode = event.target.value === "dark";
-                document.documentElement.dataset.dark = String(darkMode);
-                setDarkMode(darkMode);
+                const newSettings = {
+                  ...settings,
+                  theme: event.target.value as Theme,
+                };
+                applyTheme(newSettings.theme);
+                storeSettings(newSettings);
+                setSettings(newSettings);
               }}
             >
+              <option value="system">Sync with system</option>
               <option value="light">Light</option>
               <option value="dark">Dark</option>
             </select>
