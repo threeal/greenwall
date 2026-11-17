@@ -3,6 +3,7 @@
   --color-fg: #213547;
   --color-fg-muted: #57606a;
   --color-error: #cf222e;
+  --color-link: #0969da;
   --color-focus: #0969da;
   --color-focus-shadow: rgba(9, 105, 218, 0.3);
 
@@ -28,9 +29,9 @@
   --color-button-bg: #f9f9f9;
   --color-button-border-hover: #646cff;
 
-  --color-icon-button-bg: #f6f8fa;
-  --color-icon-button-bg-hover: #eff2f5;
-  --color-icon-button-border: #d1d9e0;
+  --color-default-button-bg: #f6f8fa;
+  --color-default-button-bg-hover: #eff2f5;
+  --color-default-button-border: #d1d9e0;
 
   --color-invisible-button-bg-hover: rgba(129, 139, 152, 0.1);
 
@@ -59,6 +60,7 @@
     --color-fg: #e6edf3;
     --color-fg-muted: #8d96a0;
     --color-error: #f85149;
+    --color-link: #4493f8;
     --color-focus: #1f6feb;
     --color-focus-shadow: rgba(31, 111, 235, 0.3);
 
@@ -81,9 +83,9 @@
 
     --color-button-bg: #1a1a1a;
 
-    --color-icon-button-bg: #212830;
-    --color-icon-button-bg-hover: #262c36;
-    --color-icon-button-border: #3d444d;
+    --color-default-button-bg: #212830;
+    --color-default-button-bg-hover: #262c36;
+    --color-default-button-border: #3d444d;
 
     --color-invisible-button-bg-hover: rgba(101, 108, 118, 0.2);
 
@@ -101,6 +103,7 @@
   --color-fg: #e6edf3;
   --color-fg-muted: #8d96a0;
   --color-error: #f85149;
+  --color-link: #4493f8;
   --color-focus: #1f6feb;
   --color-focus-shadow: rgba(31, 111, 235, 0.3);
 
@@ -123,9 +126,9 @@
 
   --color-button-bg: #1a1a1a;
 
-  --color-icon-button-bg: #212830;
-  --color-icon-button-bg-hover: #262c36;
-  --color-icon-button-border: #3d444d;
+  --color-default-button-bg: #212830;
+  --color-default-button-bg-hover: #262c36;
+  --color-default-button-border: #3d444d;
 
   --color-invisible-button-bg-hover: rgba(101, 108, 118, 0.2);
 

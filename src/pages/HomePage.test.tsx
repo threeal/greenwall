@@ -1,7 +1,8 @@
 import { createMemoryRouter, RouterProvider } from "react-router";
-import { beforeEach, describe, expect, test } from "vitest";
+import { beforeEach, describe, expect, inject, test } from "vitest";
 import { render } from "vitest-browser-react";
 import { storeContributions } from "../contributionsStorage.ts";
+import { storeSettings } from "../settingsStorage.ts";
 import HomePage from "./HomePage.tsx";
 
 /**
@@ -28,11 +29,57 @@ function visibleTooltips() {
     .map((cell) => cell.dataset.tooltip);
 }
 
-// These tests call the real contributions API on purpose, to also catch the API going away or changing shape.
+// These tests call the real contributions APIs on purpose, to also catch the APIs going away or changing shape.
+// The ones fetching with a GitHub token need it in the `GITHUB_TOKEN` environment variable.
 describe("HomePage", () => {
   beforeEach(() => {
     localStorage.clear();
   });
+
+  test(
+    "loads contributions with a GitHub token",
+    { timeout: 20_000 },
+    async () => {
+      storeSettings({ theme: "system", token: inject("githubToken") });
+      const { screen } = await renderAt("/threeal");
+      await expect
+        .element(screen.getByRole("button", { name: "Refresh" }), {
+          timeout: 15_000,
+        })
+        .toBeEnabled();
+      await expect
+        .element(screen.getByText(/contributions? in the last year/))
+        .toBeVisible();
+    },
+  );
+
+  test(
+    "falls back to the jogruber API for a rejected token and refetches when the token changes",
+    { timeout: 35_000 },
+    async () => {
+      storeSettings({ theme: "system", token: "github_pat_invalid" });
+      const { screen } = await renderAt("/threeal");
+      await expect
+        .element(screen.getByRole("button", { name: "Refresh" }), {
+          timeout: 15_000,
+        })
+        .toBeEnabled();
+      await expect.element(screen.getByRole("status")).toBeEmptyDOMElement();
+      const tooltips = visibleTooltips();
+
+      storeSettings({ theme: "system", token: inject("githubToken") });
+      await expect
+        .element(screen.getByRole("status"))
+        .toHaveTextContent("loading contributions for threeal…");
+      expect(visibleTooltips()).toEqual(tooltips);
+
+      await expect
+        .element(screen.getByRole("button", { name: "Refresh" }), {
+          timeout: 15_000,
+        })
+        .toBeEnabled();
+    },
+  );
 
   test("shows an empty, enabled form when there is no username", async () => {
     const { screen } = await renderAt("/");

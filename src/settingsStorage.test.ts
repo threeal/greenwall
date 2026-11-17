@@ -1,5 +1,10 @@
 import { afterEach, describe, expect, test, vi } from "vitest";
-import { applyTheme, loadSettings, storeSettings } from "./settingsStorage.ts";
+import {
+  applyTheme,
+  loadSettings,
+  storeSettings,
+  subscribeSettings,
+} from "./settingsStorage.ts";
 
 afterEach(() => {
   localStorage.removeItem("settings");
@@ -36,6 +41,24 @@ describe("loadSettings", () => {
     expect(loadSettings()).toEqual({ theme: "system" });
   });
 
+  test("returns the stored token", () => {
+    storeSettings({ theme: "system", token: "github_pat_test" });
+    expect(loadSettings()).toEqual({
+      theme: "system",
+      token: "github_pat_test",
+    });
+  });
+
+  test("returns no token for a stored token that isn't a non-empty string", () => {
+    for (const token of ["", 42]) {
+      localStorage.setItem(
+        "settings",
+        JSON.stringify({ version: 1, theme: "dark", token }),
+      );
+      expect(loadSettings()).toEqual({ theme: "dark", token: undefined });
+    }
+  });
+
   test("returns the default theme for an unknown stored theme", () => {
     localStorage.setItem(
       "settings",
@@ -52,6 +75,19 @@ describe("storeSettings", () => {
     });
     storeSettings({ theme: "dark" });
     expect(loadSettings()).toEqual({ theme: "system" });
+  });
+});
+
+describe("subscribeSettings", () => {
+  test("calls the listener whenever the settings are stored", () => {
+    const listener = vi.fn();
+    const unsubscribe = subscribeSettings(listener);
+    storeSettings({ theme: "dark" });
+    expect(listener).toHaveBeenCalledTimes(1);
+
+    unsubscribe();
+    storeSettings({ theme: "light" });
+    expect(listener).toHaveBeenCalledTimes(1);
   });
 });
 

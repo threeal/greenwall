@@ -1,12 +1,17 @@
-import { Suspense, use, useState } from "react";
+import { Suspense, use, useState, useSyncExternalStore } from "react";
 import { useNavigate, useParams } from "react-router";
 import ContributionsGrid from "../components/ContributionsGrid.tsx";
 import FetchStatus from "../components/FetchStatus.tsx";
 import UsernameForm from "../components/UsernameForm.tsx";
 import {
+  fetchGitHubContributions,
+  fetchJogruberContributions,
+} from "../contributionsApi.ts";
+import {
   loadStoredContributions,
   storeContributions,
 } from "../contributionsStorage.ts";
+import { loadSettings, subscribeSettings } from "../settingsStorage.ts";
 import type { ContributionDay } from "../types.ts";
 import styles from "./HomePage.module.css";
 
@@ -14,28 +19,29 @@ type ContributionResult =
   { contributions: ContributionDay[] } | { error: true };
 
 /**
- * Fetches a user's last year of contributions from the jogruber contributions API, storing them for later page loads.
+ * Fetches a user's last year of contributions, storing them for later page loads.
+ * With a token, they're fetched from the GitHub GraphQL API, falling back to the jogruber contributions API if that fails.
  * @param username - The GitHub username, or undefined when none is given.
+ * @param token - The GitHub token to fetch with, if any.
  * @returns The user's contributions, none without a username, or an error result if the request fails.
  */
 async function fetchContributions(
   username: string | undefined,
+  token: string | undefined,
 ): Promise<ContributionResult> {
   if (!username) {
     return { contributions: [] };
   }
   try {
-    const response = await fetch(
-      `https://github-contributions-api.jogruber.de/v4/${encodeURIComponent(username)}?y=last`,
-    );
-    if (!response.ok) {
-      throw new Error();
+    let contributions: ContributionDay[] | undefined;
+    if (token !== undefined) {
+      contributions = await fetchGitHubContributions(username, token).catch(
+        () => undefined,
+      );
     }
-    const data = (await response.json()) as {
-      contributions: ContributionDay[];
-    };
-    storeContributions(username, data.contributions);
-    return { contributions: data.contributions };
+    contributions ??= await fetchJogruberContributions(username);
+    storeContributions(username, contributions);
+    return { contributions };
   } catch {
     return { error: true };
   }
@@ -147,10 +153,19 @@ function ResolvedHomePage({
  * Until the first fetch resolves, the contributions stored by an earlier page load are shown, if any.
  * @param props - The component props.
  * @param props.username - The username from the path, if any.
+ * @param props.token - The GitHub token to fetch with, if any.
  * @returns The home page content, wrapped in a Suspense boundary.
  */
-function LoadedHomePage({ username }: { username: string | undefined }) {
-  const [promise, setPromise] = useState(() => fetchContributions(username));
+function LoadedHomePage({
+  username,
+  token,
+}: {
+  username: string | undefined;
+  token: string | undefined;
+}) {
+  const [promise, setPromise] = useState(() =>
+    fetchContributions(username, token),
+  );
   const [loadedContributions, setLoadedContributions] = useState(() =>
     username ? loadStoredContributions(username) : undefined,
   );
@@ -162,7 +177,7 @@ function LoadedHomePage({ username }: { username: string | undefined }) {
     onInputChange: setInput,
     onRefresh: (contributions) => {
       setLoadedContributions(contributions);
-      setPromise(fetchContributions(username));
+      setPromise(fetchContributions(username, token));
     },
   };
 
@@ -188,11 +203,21 @@ function LoadedHomePage({ username }: { username: string | undefined }) {
 }
 
 /**
- * Renders the home page for the username in the path, reloading when the username changes.
+ * Renders the home page for the username in the path, reloading when the username or the stored GitHub token changes.
  * @returns The home page content.
  */
 export default function HomePage() {
   const { username } = useParams();
+  const token = useSyncExternalStore(
+    subscribeSettings,
+    () => loadSettings().token,
+  );
 
-  return <LoadedHomePage key={username} username={username} />;
+  return (
+    <LoadedHomePage
+      key={JSON.stringify([username, token])}
+      username={username}
+      token={token}
+    />
+  );
 }
