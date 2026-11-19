@@ -1,4 +1,5 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { checkGitHubToken } from "../contributionsApi.ts";
 import {
   applyTheme,
   type Settings as SettingsValues,
@@ -8,8 +9,9 @@ import {
 import styles from "./Settings.module.css";
 
 /**
- * Renders a button that opens a settings panel, where the page's theme can be chosen.
+ * Renders a button that opens a settings panel, where the page's theme and a GitHub token can be chosen.
  * Each change applies right away and is stored for later visits.
+ * A token that GitHub rejects is reported in the panel and marked on the button.
  * @param props - The component props.
  * @param props.initialSettings - The settings the page starts with.
  * @returns A button element followed by its settings dialog.
@@ -21,6 +23,28 @@ export default function Settings({
 }) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const [settings, setSettings] = useState(initialSettings);
+  const [tokenInput, setTokenInput] = useState("");
+  const [rejectedToken, setRejectedToken] = useState<string>();
+
+  const { token } = settings;
+  const tokenRejected = token !== undefined && token === rejectedToken;
+
+  useEffect(() => {
+    if (token === undefined) return;
+    void checkGitHubToken(token).then((accepted) => {
+      if (!accepted) setRejectedToken(token);
+    });
+  }, [token]);
+
+  /**
+   * Applies and stores new settings.
+   * @param newSettings - The settings to change to.
+   */
+  function changeSettings(newSettings: SettingsValues) {
+    applyTheme(newSettings.theme);
+    storeSettings(newSettings);
+    setSettings(newSettings);
+  }
 
   return (
     <>
@@ -41,6 +65,9 @@ export default function Settings({
         >
           <path d="M8 0a8.2 8.2 0 0 1 .701.031C9.444.095 9.99.645 10.16 1.29l.288 1.107c.018.066.079.158.212.224.231.114.454.243.668.386.123.082.233.09.299.071l1.103-.303c.644-.176 1.392.021 1.82.63.27.385.506.792.704 1.218.315.675.111 1.422-.364 1.891l-.814.806c-.049.048-.098.147-.088.294.016.257.016.515 0 .772-.01.147.038.246.088.294l.814.806c.475.469.679 1.216.364 1.891a7.977 7.977 0 0 1-.704 1.217c-.428.61-1.176.807-1.82.63l-1.102-.302c-.067-.019-.177-.011-.3.071a5.909 5.909 0 0 1-.668.386c-.133.066-.194.158-.211.224l-.29 1.106c-.168.646-.715 1.196-1.458 1.26a8.006 8.006 0 0 1-1.402 0c-.743-.064-1.289-.614-1.458-1.26l-.289-1.106c-.018-.066-.079-.158-.212-.224a5.738 5.738 0 0 1-.668-.386c-.123-.082-.233-.09-.299-.071l-1.103.303c-.644.176-1.392-.021-1.82-.63a8.12 8.12 0 0 1-.704-1.218c-.315-.675-.111-1.422.363-1.891l.815-.806c.05-.048.098-.147.088-.294a6.214 6.214 0 0 1 0-.772c.01-.147-.038-.246-.088-.294l-.815-.806C.635 6.045.431 5.298.746 4.623a7.92 7.92 0 0 1 .704-1.217c.428-.61 1.176-.807 1.82-.63l1.102.302c.067.019.177.011.3-.071.214-.143.437-.272.668-.386.133-.066.194-.158.211-.224l.29-1.106C6.009.645 6.556.095 7.299.03 7.53.01 7.764 0 8 0Zm-.571 1.525c-.036.003-.108.036-.137.146l-.289 1.105c-.147.561-.549.967-.998 1.189-.173.086-.34.183-.5.29-.417.278-.97.423-1.529.27l-1.103-.303c-.109-.03-.175.016-.195.045-.22.312-.412.644-.573.99-.014.031-.021.11.059.19l.815.806c.411.406.562.957.53 1.456a4.709 4.709 0 0 0 0 .582c.032.499-.119 1.05-.53 1.456l-.815.806c-.081.08-.073.159-.059.19.162.346.353.677.573.989.02.03.085.076.195.046l1.102-.303c.56-.153 1.113-.008 1.53.27.161.107.328.204.501.29.447.222.85.629.997 1.189l.289 1.105c.029.109.101.143.137.146a6.6 6.6 0 0 0 1.142 0c.036-.003.108-.036.137-.146l.289-1.105c.147-.561.549-.967.998-1.189.173-.086.34-.183.5-.29.417-.278.97-.423 1.529-.27l1.103.303c.109.029.175-.016.195-.045.22-.313.411-.644.573-.99.014-.031.021-.11-.059-.19l-.815-.806c-.411-.406-.562-.957-.53-1.456a4.709 4.709 0 0 0 0-.582c-.032-.499.119-1.05.53-1.456l.815-.806c.081-.08.073-.159.059-.19a6.464 6.464 0 0 0-.573-.989c-.02-.03-.085-.076-.195-.046l-1.102.303c-.56.153-1.113.008-1.53-.27a4.44 4.44 0 0 0-.501-.29c-.447-.222-.85-.629-.997-1.189l-.289-1.105c-.029-.11-.101-.143-.137-.146a6.6 6.6 0 0 0-1.142 0ZM11 8a3 3 0 1 1-6 0 3 3 0 0 1 6 0ZM9.5 8a1.5 1.5 0 1 0-3.001.001A1.5 1.5 0 0 0 9.5 8Z" />
         </svg>
+        {tokenRejected && (
+          <span className={styles.attentionDot} aria-hidden="true" />
+        )}
       </button>
       <dialog
         ref={dialogRef}
@@ -71,37 +98,104 @@ export default function Settings({
           </form>
         </div>
         <div className={styles.body}>
-          <label htmlFor="settings-theme" className={styles.label}>
-            Theme
-          </label>
-          <div className={styles.select}>
-            <select
-              id="settings-theme"
-              value={settings.theme}
-              onChange={(event) => {
-                const newSettings = {
-                  ...settings,
-                  theme: event.target.value as Theme,
-                };
-                applyTheme(newSettings.theme);
-                storeSettings(newSettings);
-                setSettings(newSettings);
+          <div>
+            <label htmlFor="settings-theme" className={styles.label}>
+              Theme
+            </label>
+            <div className={styles.select}>
+              <select
+                id="settings-theme"
+                value={settings.theme}
+                onChange={(event) => {
+                  changeSettings({
+                    ...settings,
+                    theme: event.target.value as Theme,
+                  });
+                }}
+              >
+                <option value="system">Sync with system</option>
+                <option value="light">Light</option>
+                <option value="dark">Dark</option>
+              </select>
+              <svg
+                viewBox="0 0 16 16"
+                width="16"
+                height="16"
+                fill="currentColor"
+                aria-hidden="true"
+              >
+                <path d="M12.78 5.22a.749.749 0 0 1 0 1.06l-4.25 4.25a.749.749 0 0 1-1.06 0L3.22 6.28a.749.749 0 1 1 1.06-1.06L8 8.939l3.72-3.719a.749.749 0 0 1 1.06 0Z" />
+              </svg>
+            </div>
+          </div>
+          {token === undefined ? (
+            <form
+              onSubmit={(event) => {
+                event.preventDefault();
+                changeSettings({ ...settings, token: tokenInput.trim() });
+                setTokenInput("");
               }}
             >
-              <option value="system">Sync with system</option>
-              <option value="light">Light</option>
-              <option value="dark">Dark</option>
-            </select>
-            <svg
-              viewBox="0 0 16 16"
-              width="16"
-              height="16"
-              fill="currentColor"
-              aria-hidden="true"
-            >
-              <path d="M12.78 5.22a.749.749 0 0 1 0 1.06l-4.25 4.25a.749.749 0 0 1-1.06 0L3.22 6.28a.749.749 0 1 1 1.06-1.06L8 8.939l3.72-3.719a.749.749 0 0 1 1.06 0Z" />
-            </svg>
-          </div>
+              <label htmlFor="settings-token" className={styles.label}>
+                GitHub token
+              </label>
+              <div className={styles.row}>
+                <input
+                  id="settings-token"
+                  className={styles.input}
+                  type="password"
+                  autoComplete="off"
+                  spellCheck={false}
+                  aria-describedby="settings-token-caption"
+                  value={tokenInput}
+                  onChange={(event) => {
+                    setTokenInput(event.target.value);
+                  }}
+                />
+                <button
+                  type="submit"
+                  className={styles.button}
+                  disabled={tokenInput.trim() === ""}
+                >
+                  Save
+                </button>
+              </div>
+              <p id="settings-token-caption" className={styles.caption}>
+                Optional. Loads contributions straight from GitHub. It&apos;s
+                stored only in this browser.{" "}
+                <a
+                  href="https://github.com/settings/personal-access-tokens/new"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  Create a fine-grained token
+                </a>{" "}
+                with no extra permissions.
+              </p>
+            </form>
+          ) : (
+            <div>
+              <span className={styles.label}>GitHub token</span>
+              <div className={styles.row}>
+                <span className={styles.tokenSaved}>A token is saved</span>
+                <button
+                  type="button"
+                  className={`${styles.button} ${styles.dangerButton}`}
+                  onClick={() => {
+                    changeSettings({ ...settings, token: undefined });
+                  }}
+                >
+                  Remove
+                </button>
+              </div>
+              {tokenRejected && (
+                <p className={styles.error} role="alert">
+                  GitHub rejected this token. It may have expired or been
+                  revoked.
+                </p>
+              )}
+            </div>
+          )}
         </div>
       </dialog>
     </>
