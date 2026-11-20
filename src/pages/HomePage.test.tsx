@@ -20,6 +20,13 @@ async function renderAt(path: string) {
 }
 
 /**
+ * Stores the GitHub token from the environment, so the page fetches through the GitHub API instead of the rate-limited jogruber API.
+ */
+function storeGitHubToken() {
+  storeSettings({ theme: "system", token: inject("githubToken") });
+}
+
+/**
  * Lists the tooltips of the grid cells currently visible on the page.
  * @returns The visible cells' tooltips, in grid order.
  */
@@ -30,7 +37,8 @@ function visibleTooltips() {
 }
 
 // These tests call the real contributions APIs on purpose, to also catch the APIs going away or changing shape.
-// The ones fetching with a GitHub token need it in the `GITHUB_TOKEN` environment variable.
+// The jogruber API allows only 10 requests per 10 seconds, so tests that only check the page's behavior fetch through the GitHub API,
+// with the token from the `GITHUB_TOKEN` environment variable.
 describe("HomePage", () => {
   beforeEach(() => {
     localStorage.clear();
@@ -40,7 +48,7 @@ describe("HomePage", () => {
     "loads contributions with a GitHub token",
     { timeout: 20_000 },
     async () => {
-      storeSettings({ theme: "system", token: inject("githubToken") });
+      storeGitHubToken();
       const { screen } = await renderAt("/threeal");
       await expect
         .element(screen.getByRole("button", { name: "Refresh" }), {
@@ -67,7 +75,7 @@ describe("HomePage", () => {
       await expect.element(screen.getByRole("status")).toBeEmptyDOMElement();
       const tooltips = visibleTooltips();
 
-      storeSettings({ theme: "system", token: inject("githubToken") });
+      storeGitHubToken();
       await expect
         .element(screen.getByRole("status"))
         .toHaveTextContent("loading contributions for threeal…");
@@ -95,6 +103,7 @@ describe("HomePage", () => {
   });
 
   test("navigates to the submitted username's path", async () => {
+    storeGitHubToken();
     const { router, screen } = await renderAt("/");
     await screen.getByRole("textbox").fill("octocat");
     await screen.getByRole("button", { name: "View contributions" }).click();
@@ -139,6 +148,7 @@ describe("HomePage", () => {
       const today = new Date();
       const date = `${String(today.getFullYear())}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
       storeContributions("threeal", [{ date, count: 999, level: 4 }]);
+      storeGitHubToken();
 
       const { screen } = await renderAt("/threeal");
       await expect
@@ -168,6 +178,7 @@ describe("HomePage", () => {
     "refreshes contributions without changing the path or clearing the grid",
     { timeout: 35_000 },
     async () => {
+      storeGitHubToken();
       const { router, screen } = await renderAt("/threeal");
       await expect
         .element(screen.getByRole("button", { name: "Refresh" }), {
@@ -202,6 +213,7 @@ describe("HomePage", () => {
     "switches to another username without waiting for the current one to load",
     { timeout: 20_000 },
     async () => {
+      storeGitHubToken();
       const { router, screen } = await renderAt("/octocat");
       await screen.getByRole("textbox").fill("threeal");
       await screen.getByRole("button", { name: "View contributions" }).click();
