@@ -41,6 +41,17 @@ describe("loadStoredContributions", () => {
     expect(loadStoredContributions(USERNAME)).toBeUndefined();
   });
 
+  test("returns undefined for stored contributions with an unexpected shape", () => {
+    localStorage.setItem(
+      `contributions:${USERNAME}`,
+      JSON.stringify({
+        version: 1,
+        contributions: [{ date: "2026-08-20", count: "2", level: 2 }],
+      }),
+    );
+    expect(loadStoredContributions(USERNAME)).toBeUndefined();
+  });
+
   test("returns undefined for a value that isn't valid JSON", () => {
     localStorage.setItem(`contributions:${USERNAME}`, "{");
     expect(loadStoredContributions(USERNAME)).toBeUndefined();

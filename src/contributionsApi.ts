@@ -1,4 +1,5 @@
-import type { ContributionDay } from "./types.ts";
+import * as v from "valibot";
+import { type ContributionDay, ContributionDaySchema } from "./types.ts";
 
 const GITHUB_GRAPHQL_URL = "https://api.github.com/graphql";
 
@@ -20,30 +21,73 @@ const CONTRIBUTIONS_QUERY = `
   }
 `;
 
-const CONTRIBUTION_LEVELS = {
+const ContributionLevelSchema = v.picklist([
+  "NONE",
+  "FIRST_QUARTILE",
+  "SECOND_QUARTILE",
+  "THIRD_QUARTILE",
+  "FOURTH_QUARTILE",
+]);
+
+const CONTRIBUTION_LEVELS: Record<
+  v.InferOutput<typeof ContributionLevelSchema>,
+  ContributionDay["level"]
+> = {
   NONE: 0,
   FIRST_QUARTILE: 1,
   SECOND_QUARTILE: 2,
   THIRD_QUARTILE: 3,
   FOURTH_QUARTILE: 4,
-} as const;
+};
 
-interface ContributionsQueryResponse {
-  data: {
-    user: {
-      contributionsCollection: {
-        contributionCalendar: {
-          weeks: {
-            contributionDays: {
-              date: string;
-              contributionCount: number;
-              contributionLevel: keyof typeof CONTRIBUTION_LEVELS;
-            }[];
-          }[];
-        };
-      };
-    } | null;
-  };
+const ContributionsQueryResponseSchema = v.object({
+  data: v.object({
+    user: v.nullable(
+      v.object({
+        contributionsCollection: v.object({
+          contributionCalendar: v.object({
+            weeks: v.array(
+              v.object({
+                contributionDays: v.array(
+                  v.object({
+                    date: v.string(),
+                    contributionCount: v.number(),
+                    contributionLevel: ContributionLevelSchema,
+                  }),
+                ),
+              }),
+            ),
+          }),
+        }),
+      }),
+    ),
+  }),
+});
+
+const JogruberResponseSchema = v.object({
+  contributions: v.array(ContributionDaySchema),
+});
+
+/**
+ * Parses an API response's body with a schema.
+ * @param api - The API's name, for the error message.
+ * @param schema - The schema the body should match.
+ * @param body - The response's parsed JSON body.
+ * @returns The parsed body.
+ * @throws If the body doesn't match the schema.
+ */
+export function parseResponseBody<TSchema extends v.GenericSchema>(
+  api: string,
+  schema: TSchema,
+  body: unknown,
+): v.InferOutput<TSchema> {
+  const result = v.safeParse(schema, body);
+  if (!result.success) {
+    throw new Error(
+      `${api} API responded with an unexpected body:\n${v.summarize(result.issues)}`,
+    );
+  }
+  return result.output;
 }
 
 /**
@@ -69,7 +113,7 @@ function queryGitHub(
  * Fetches a user's last year of contributions from the jogruber contributions API.
  * @param username - The GitHub username.
  * @returns The user's contributions.
- * @throws If the request fails or the user doesn't exist.
+ * @throws If the request fails, the user doesn't exist, or the response has an unexpected body.
  */
 export async function fetchJogruberContributions(
   username: string,
@@ -80,8 +124,12 @@ export async function fetchJogruberContributions(
   if (!response.ok) {
     throw new Error(`jogruber API responded with ${String(response.status)}`);
   }
-  const data = (await response.json()) as { contributions: ContributionDay[] };
-  return data.contributions;
+  const { contributions } = parseResponseBody(
+    "jogruber",
+    JogruberResponseSchema,
+    await response.json(),
+  );
+  return contributions;
 }
 
 /**
@@ -89,7 +137,7 @@ export async function fetchJogruberContributions(
  * @param username - The GitHub username.
  * @param token - The GitHub token to authenticate with.
  * @returns The user's contributions.
- * @throws If the request fails, GitHub rejects the token, or the user doesn't exist.
+ * @throws If the request fails, GitHub rejects the token, the user doesn't exist, or the response has an unexpected body.
  */
 export async function fetchGitHubContributions(
   username: string,
@@ -102,7 +150,11 @@ export async function fetchGitHubContributions(
   if (!response.ok) {
     throw new Error(`GitHub API responded with ${String(response.status)}`);
   }
-  const { data } = (await response.json()) as ContributionsQueryResponse;
+  const { data } = parseResponseBody(
+    "GitHub",
+    ContributionsQueryResponseSchema,
+    await response.json(),
+  );
   if (data.user === null) {
     throw new Error(`GitHub user ${username} doesn't exist`);
   }

@@ -1,5 +1,9 @@
+import * as v from "valibot";
+
+const ThemeSchema = v.picklist(["system", "light", "dark"]);
+
 /** The page's theme: following the system, or always light or dark. */
-export type Theme = "system" | "light" | "dark";
+export type Theme = v.InferOutput<typeof ThemeSchema>;
 
 export interface Settings {
   theme: Theme;
@@ -7,42 +11,21 @@ export interface Settings {
   token?: string;
 }
 
-interface StoredSettingsV1 {
-  version: 1;
-  theme: unknown;
-  token?: unknown;
-}
-
 const STORAGE_KEY = "settings";
 
 const DEFAULT_SETTINGS: Settings = { theme: "system" };
 
+// A field with an invalid value falls back to its default, keeping the other fields.
+const StoredSettingsV1Schema = v.object({
+  version: v.literal(1),
+  theme: v.fallback(ThemeSchema, DEFAULT_SETTINGS.theme),
+  token: v.fallback(v.optional(v.pipe(v.string(), v.nonEmpty())), undefined),
+});
+
+// Dispatches on the version, so a stored layout of another version needs only its own schema here.
+const StoredSettingsSchema = v.variant("version", [StoredSettingsV1Schema]);
+
 const listeners = new Set<() => void>();
-
-/**
- * Parses a stored theme, falling back to the default for a value that isn't a known theme.
- * @param theme - The stored theme.
- * @returns The theme.
- */
-function parseTheme(theme: unknown): Theme {
-  switch (theme) {
-    case "system":
-    case "light":
-    case "dark":
-      return theme;
-    default:
-      return DEFAULT_SETTINGS.theme;
-  }
-}
-
-/**
- * Parses a stored token, dropping a value that isn't a non-empty string.
- * @param token - The stored token.
- * @returns The token, or undefined if none is stored.
- */
-function parseToken(token: unknown): string | undefined {
-  return typeof token === "string" && token !== "" ? token : undefined;
-}
 
 /**
  * Loads the settings stored by an earlier visit.
@@ -52,15 +35,10 @@ export function loadSettings(): Settings {
   try {
     const item = localStorage.getItem(STORAGE_KEY);
     if (item === null) return DEFAULT_SETTINGS;
-    const stored = JSON.parse(item) as { version: unknown };
-    switch (stored.version) {
-      case 1: {
-        const { theme, token } = stored as StoredSettingsV1;
-        return { theme: parseTheme(theme), token: parseToken(token) };
-      }
-      default:
-        return DEFAULT_SETTINGS;
-    }
+    const result = v.safeParse(StoredSettingsSchema, JSON.parse(item));
+    if (!result.success) return DEFAULT_SETTINGS;
+    const { theme, token } = result.output;
+    return { theme, token };
   } catch {
     return DEFAULT_SETTINGS;
   }
@@ -72,7 +50,10 @@ export function loadSettings(): Settings {
  * @param settings - The settings to store.
  */
 export function storeSettings(settings: Settings) {
-  const stored: StoredSettingsV1 = { version: 1, ...settings };
+  const stored: v.InferInput<typeof StoredSettingsV1Schema> = {
+    version: 1,
+    ...settings,
+  };
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(stored));
   } catch {

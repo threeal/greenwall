@@ -1,12 +1,30 @@
+import * as v from "valibot";
 import { describe, expect, inject, test } from "vitest";
 import {
   checkGitHubToken,
   fetchGitHubContributions,
+  parseResponseBody,
 } from "./contributionsApi.ts";
 
 // These tests call the real GitHub API on purpose, to also catch it changing shape.
 // They need a GitHub token in the `GITHUB_TOKEN` environment variable.
 const token = inject("githubToken");
+
+describe("parseResponseBody", () => {
+  const schema = v.object({ contributions: v.array(v.number()) });
+
+  test("returns a body that matches the schema", () => {
+    expect(
+      parseResponseBody("Test", schema, { contributions: [2, 5] }),
+    ).toEqual({ contributions: [2, 5] });
+  });
+
+  test("throws for a body that doesn't match the schema", () => {
+    expect(() =>
+      parseResponseBody("Test", schema, { contributions: ["2"] }),
+    ).toThrow("Test API responded with an unexpected body");
+  });
+});
 
 describe("fetchGitHubContributions", { concurrent: true }, () => {
   test("returns a user's last year of contributions", async () => {
