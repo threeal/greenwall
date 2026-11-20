@@ -41,6 +41,11 @@ describe("loadSettings", () => {
     expect(loadSettings()).toEqual({ theme: "system" });
   });
 
+  test("returns the default settings for a stored value that isn't an object", () => {
+    localStorage.setItem("settings", "42");
+    expect(loadSettings()).toEqual({ theme: "system" });
+  });
+
   test("returns the stored token", () => {
     storeSettings({ theme: "system", token: "github_pat_test" });
     expect(loadSettings()).toEqual({

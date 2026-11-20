@@ -1,9 +1,15 @@
-import type { ContributionDay } from "./types.ts";
+import * as v from "valibot";
+import { type ContributionDay, ContributionDaySchema } from "./types.ts";
 
-interface StoredContributionsV1 {
-  version: 1;
-  contributions: ContributionDay[];
-}
+const StoredContributionsV1Schema = v.object({
+  version: v.literal(1),
+  contributions: v.array(ContributionDaySchema),
+});
+
+// Dispatches on the version, so a stored layout of another version needs only its own schema here.
+const StoredContributionsSchema = v.variant("version", [
+  StoredContributionsV1Schema,
+]);
 
 /**
  * Gets the `localStorage` key holding a user's stored contributions.
@@ -25,13 +31,9 @@ export function loadStoredContributions(
   try {
     const item = localStorage.getItem(storageKey(username));
     if (item === null) return undefined;
-    const stored = JSON.parse(item) as { version: unknown };
-    switch (stored.version) {
-      case 1:
-        return (stored as StoredContributionsV1).contributions;
-      default:
-        return undefined;
-    }
+    const result = v.safeParse(StoredContributionsSchema, JSON.parse(item));
+    if (!result.success) return undefined;
+    return result.output.contributions;
   } catch {
     return undefined;
   }
@@ -47,7 +49,10 @@ export function storeContributions(
   username: string,
   contributions: ContributionDay[],
 ) {
-  const stored: StoredContributionsV1 = { version: 1, contributions };
+  const stored: v.InferInput<typeof StoredContributionsV1Schema> = {
+    version: 1,
+    contributions,
+  };
   try {
     localStorage.setItem(storageKey(username), JSON.stringify(stored));
   } catch {
