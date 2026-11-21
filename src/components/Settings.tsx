@@ -1,10 +1,12 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { checkGitHubToken } from "../contributionsApi.ts";
 import {
   applyTheme,
-  type Settings as SettingsValues,
-  storeSettings,
-  type Theme,
+  loadTheme,
+  loadToken,
+  storeTheme,
+  storeToken,
+  subscribeToken,
 } from "../settingsStorage.ts";
 import styles from "./Settings.module.css";
 
@@ -12,39 +14,22 @@ import styles from "./Settings.module.css";
  * Renders a button that opens a settings panel, where the page's theme and a GitHub token can be chosen.
  * Each change applies right away and is stored for later visits.
  * A token that GitHub rejects is reported in the panel and marked on the button.
- * @param props - The component props.
- * @param props.initialSettings - The settings the page starts with.
  * @returns A button element followed by its settings dialog.
  */
-export default function Settings({
-  initialSettings,
-}: {
-  initialSettings: SettingsValues;
-}) {
+export default function Settings() {
   const dialogRef = useRef<HTMLDialogElement>(null);
-  const [settings, setSettings] = useState(initialSettings);
+  const token = useSyncExternalStore(subscribeToken, loadToken);
   const [tokenInput, setTokenInput] = useState("");
   const [rejectedToken, setRejectedToken] = useState<string>();
 
-  const { token } = settings;
-  const tokenRejected = token !== undefined && token === rejectedToken;
+  const tokenRejected = token === rejectedToken;
 
   useEffect(() => {
-    if (token === undefined) return;
+    if (token === "") return;
     void checkGitHubToken(token).then((accepted) => {
       if (!accepted) setRejectedToken(token);
     });
   }, [token]);
-
-  /**
-   * Applies and stores new settings.
-   * @param newSettings - The settings to change to.
-   */
-  function changeSettings(newSettings: SettingsValues) {
-    applyTheme(newSettings.theme);
-    storeSettings(newSettings);
-    setSettings(newSettings);
-  }
 
   return (
     <>
@@ -105,15 +90,13 @@ export default function Settings({
             <div className={styles.select}>
               <select
                 id="settings-theme"
-                value={settings.theme}
+                defaultValue={loadTheme()}
                 onChange={(event) => {
-                  changeSettings({
-                    ...settings,
-                    theme: event.target.value as Theme,
-                  });
+                  applyTheme(event.target.value);
+                  storeTheme(event.target.value);
                 }}
               >
-                <option value="system">Sync with system</option>
+                <option value="">Sync with system</option>
                 <option value="light">Light</option>
                 <option value="dark">Dark</option>
               </select>
@@ -128,11 +111,11 @@ export default function Settings({
               </svg>
             </div>
           </div>
-          {token === undefined ? (
+          {token === "" ? (
             <form
               onSubmit={(event) => {
                 event.preventDefault();
-                changeSettings({ ...settings, token: tokenInput.trim() });
+                storeToken(tokenInput.trim());
                 setTokenInput("");
               }}
             >
@@ -182,7 +165,7 @@ export default function Settings({
                   type="button"
                   className={`${styles.button} ${styles.dangerButton}`}
                   onClick={() => {
-                    changeSettings({ ...settings, token: undefined });
+                    storeToken("");
                   }}
                 >
                   Remove

@@ -2,7 +2,7 @@ import { createMemoryRouter, RouterProvider } from "react-router";
 import { beforeEach, describe, expect, inject, test } from "vitest";
 import { render } from "vitest-browser-react";
 import { storeContributions } from "../contributionsStorage.ts";
-import { storeSettings } from "../settingsStorage.ts";
+import { storeToken } from "../settingsStorage.ts";
 import HomePage from "./HomePage.tsx";
 
 /**
@@ -23,7 +23,7 @@ async function renderAt(path: string) {
  * Stores the GitHub token from the environment, so the page fetches through the GitHub API instead of the rate-limited jogruber API.
  */
 function storeGitHubToken() {
-  storeSettings({ theme: "system", token: inject("githubToken") });
+  storeToken(inject("githubToken"));
 }
 
 /**
@@ -65,7 +65,7 @@ describe("HomePage", () => {
     "falls back to the jogruber API for a rejected token and refetches when the token changes",
     { timeout: 35_000 },
     async () => {
-      storeSettings({ theme: "system", token: "github_pat_invalid" });
+      storeToken("github_pat_invalid");
       const { screen } = await renderAt("/threeal");
       await expect
         .element(screen.getByRole("button", { name: "Refresh" }), {
