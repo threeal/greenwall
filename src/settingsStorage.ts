@@ -1,96 +1,97 @@
-import * as v from "valibot";
+// Each setting is stored under its own key as a plain string, with an empty string for no value.
+// The inline script in `index.html` reads the theme key too, to apply the stored theme before the first paint.
+const THEME_KEY = "theme";
+const TOKEN_KEY = "token";
 
-const ThemeSchema = v.picklist(["system", "light", "dark"]);
-
-/** The page's theme: following the system, or always light or dark. */
-export type Theme = v.InferOutput<typeof ThemeSchema>;
-
-export interface Settings {
-  theme: Theme;
-  /** The GitHub token to fetch contributions with, if one is given. */
-  token?: string;
-}
-
-const STORAGE_KEY = "settings";
-
-const DEFAULT_SETTINGS: Settings = { theme: "system" };
-
-// A field with an invalid value falls back to its default, keeping the other fields.
-const StoredSettingsV1Schema = v.object({
-  version: v.literal(1),
-  theme: v.fallback(ThemeSchema, DEFAULT_SETTINGS.theme),
-  token: v.fallback(v.optional(v.pipe(v.string(), v.nonEmpty())), undefined),
-});
-
-// Dispatches on the version, so a stored layout of another version needs only its own schema here.
-const StoredSettingsSchema = v.variant("version", [StoredSettingsV1Schema]);
-
-const listeners = new Set<() => void>();
+const tokenListeners = new Set<() => void>();
 
 /**
- * Loads the settings stored by an earlier visit.
- * @returns The stored settings, or the default settings if none are stored or they can't be read.
+ * Loads the theme stored by an earlier visit.
+ * @returns The stored theme, `"light"` or `"dark"`, or an empty string to follow the system.
  */
-export function loadSettings(): Settings {
-  try {
-    const item = localStorage.getItem(STORAGE_KEY);
-    if (item === null) return DEFAULT_SETTINGS;
-    const result = v.safeParse(StoredSettingsSchema, JSON.parse(item));
-    if (!result.success) return DEFAULT_SETTINGS;
-    const { theme, token } = result.output;
-    return { theme, token };
-  } catch {
-    return DEFAULT_SETTINGS;
+export function loadTheme() {
+  return loadItem(THEME_KEY);
+}
+
+/**
+ * Stores the theme for later visits.
+ * @param theme - The theme to store, `"light"` or `"dark"`, or an empty string to follow the system.
+ */
+export function storeTheme(theme: string) {
+  storeItem(THEME_KEY, theme);
+}
+
+/**
+ * Applies a theme to the page. The stylesheet matches only `"light"` and `"dark"`, so any other theme follows the system.
+ * @param theme - The theme to apply.
+ */
+export function applyTheme(theme: string) {
+  const { dataset } = document.documentElement;
+  if (theme === "") {
+    delete dataset.theme;
+  } else {
+    dataset.theme = theme;
   }
 }
 
 /**
- * Stores the settings for later visits, replacing any stored before, and notifies the subscribers.
- * Does nothing if the storage is unavailable or full.
- * @param settings - The settings to store.
+ * Loads the GitHub token stored by an earlier visit, to fetch contributions with.
+ * @returns The stored token, or an empty string if there's none.
  */
-export function storeSettings(settings: Settings) {
-  const stored: v.InferInput<typeof StoredSettingsV1Schema> = {
-    version: 1,
-    ...settings,
-  };
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(stored));
-  } catch {
-    // The settings still apply to this visit, so skip storing them.
-  }
-  for (const listener of listeners) {
+export function loadToken() {
+  return loadItem(TOKEN_KEY);
+}
+
+/**
+ * Stores the GitHub token for later visits and notifies the subscribers.
+ * @param token - The token to store, or an empty string to remove the stored one.
+ */
+export function storeToken(token: string) {
+  storeItem(TOKEN_KEY, token);
+  for (const listener of tokenListeners) {
     listener();
   }
 }
 
 /**
- * Subscribes to stored settings changes.
- * @param listener - Called after the settings are stored.
+ * Subscribes to stored GitHub token changes.
+ * @param listener - Called after a token is stored or removed.
  * @returns A function that unsubscribes the listener.
  */
-export function subscribeSettings(listener: () => void) {
-  listeners.add(listener);
+export function subscribeToken(listener: () => void) {
+  tokenListeners.add(listener);
   return () => {
-    listeners.delete(listener);
+    tokenListeners.delete(listener);
   };
 }
 
 /**
- * Applies a theme to the page.
- * @param theme - The theme to apply.
+ * Loads the value stored under a key.
+ * @param key - The key the value is stored under.
+ * @returns The stored value, or an empty string if there's none or the storage can't be read.
  */
-export function applyTheme(theme: Theme) {
-  const { dataset } = document.documentElement;
-  switch (theme) {
-    case "system":
-      delete dataset.dark;
-      break;
-    case "light":
-      dataset.dark = "false";
-      break;
-    case "dark":
-      dataset.dark = "true";
-      break;
+function loadItem(key: string) {
+  try {
+    return localStorage.getItem(key) ?? "";
+  } catch {
+    return "";
+  }
+}
+
+/**
+ * Stores a value under a key, or removes the key for an empty value.
+ * Does nothing if the storage is unavailable or full.
+ * @param key - The key to store the value under.
+ * @param value - The value to store.
+ */
+function storeItem(key: string, value: string) {
+  try {
+    if (value === "") {
+      localStorage.removeItem(key);
+    } else {
+      localStorage.setItem(key, value);
+    }
+  } catch {
+    // The setting just isn't kept for later visits.
   }
 }

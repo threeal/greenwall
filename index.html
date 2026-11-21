@@ -6,20 +6,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Greenwall</title>
     <script>
-      // Applies the stored theme before the first paint, so the page doesn't flash the system theme
-      // while the app loads. The app applies it again through `src/settingsStorage.ts`.
+      // Applies the theme stored by `src/settingsStorage.ts` before the first paint, so the page doesn't
+      // flash the system theme while the app loads.
       try {
-        const settings = JSON.parse(localStorage.getItem("settings"));
-        if (
-          settings.version === 1 &&
-          ["light", "dark"].includes(settings.theme)
-        ) {
-          document.documentElement.dataset.dark = String(
-            settings.theme === "dark",
-          );
-        }
+        // The stylesheet matches only the light and dark themes, so any other value follows the system.
+        const theme = localStorage.getItem("theme");
+        if (theme !== null) document.documentElement.dataset.theme = theme;
       } catch {
-        // Missing or unreadable settings keep the system theme.
+        // Unreadable storage keeps the system theme.
       }
     </script>
     <link rel="stylesheet" href="/src/index.css" />
