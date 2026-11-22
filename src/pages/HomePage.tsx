@@ -11,7 +11,7 @@ import {
   loadStoredContributions,
   storeContributions,
 } from "../contributionsStorage.ts";
-import { loadSettings, subscribeSettings } from "../settingsStorage.ts";
+import { loadToken, subscribeToken } from "../settingsStorage.ts";
 import type { ContributionDay } from "../types.ts";
 import styles from "./HomePage.module.css";
 
@@ -22,19 +22,19 @@ type ContributionResult =
  * Fetches a user's last year of contributions, storing them for later page loads.
  * With a token, they're fetched from the GitHub GraphQL API, falling back to the jogruber contributions API if that fails.
  * @param username - The GitHub username, or undefined when none is given.
- * @param token - The GitHub token to fetch with, if any.
+ * @param token - The GitHub token to fetch with, or an empty string for none.
  * @returns The user's contributions, none without a username, or an error result if the request fails.
  */
 async function fetchContributions(
   username: string | undefined,
-  token: string | undefined,
+  token: string,
 ): Promise<ContributionResult> {
   if (!username) {
     return { contributions: [] };
   }
   try {
     let contributions: ContributionDay[] | undefined;
-    if (token !== undefined) {
+    if (token !== "") {
       contributions = await fetchGitHubContributions(username, token).catch(
         () => undefined,
       );
@@ -153,7 +153,7 @@ function ResolvedHomePage({
  * Until the first fetch resolves, the contributions stored by an earlier page load are shown, if any.
  * @param props - The component props.
  * @param props.username - The username from the path, if any.
- * @param props.token - The GitHub token to fetch with, if any.
+ * @param props.token - The GitHub token to fetch with, or an empty string for none.
  * @returns The home page content, wrapped in a Suspense boundary.
  */
 function LoadedHomePage({
@@ -161,7 +161,7 @@ function LoadedHomePage({
   token,
 }: {
   username: string | undefined;
-  token: string | undefined;
+  token: string;
 }) {
   const [promise, setPromise] = useState(() =>
     fetchContributions(username, token),
@@ -208,10 +208,7 @@ function LoadedHomePage({
  */
 export default function HomePage() {
   const { username } = useParams();
-  const token = useSyncExternalStore(
-    subscribeSettings,
-    () => loadSettings().token,
-  );
+  const token = useSyncExternalStore(subscribeToken, loadToken);
 
   return (
     <LoadedHomePage
